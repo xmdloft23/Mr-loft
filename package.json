@@ -1,7 +1,7 @@
 {
   "name": "loft",
   "version": "1.0.0",
-  "description": "WhatsApp Bot with Multi-Number Support by inconnu boy",
+  "description": "WhatsApp Bot with Multi-Number",
   "main": "lib/connection.js",
   "type": "commonjs",
   "scripts": {
