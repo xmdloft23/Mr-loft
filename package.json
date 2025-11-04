@@ -8,7 +8,7 @@
     "start": "node lib/connection.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "github:me-tech-maker/inconnu-xd-bailey",
+    "@whiskeysockets/baileys": "^v7.0.0-rc.3",
     "express": "^4.18.2",
     "fs-extra": "^11.2.0",
     "pino": "^8.17.0",
