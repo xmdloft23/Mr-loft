@@ -47,9 +47,11 @@ const config = {
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBDVEEHLHQdjvSGpU1q'    
 }
 
-const owner = 'Xmdloft23';
-const octokit = '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';
-const repo = 'Core';
+const octokit = new Octokit({
+    auth: process.env.GITHUB_TOKEN
+});
+const owner = process.env.GITHUB_REPO_OWNER;
+const repo = process.env.GITHUB_REPO_NAME;
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
@@ -568,336 +570,490 @@ function setupAutoRestart(socket, number) {
     });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  EmpirePair – Core WhatsApp pairing & socket lifecycle
-// ─────────────────────────────────────────────────────────────────────────────
 async function EmpirePair(number, res) {
-  // 1. Sanitize
-  const sanitized = number.replace(/[^0-9]/g, '');
-  const sessionPath = path.join(SESSION_BASE_PATH, `session_${sanitized}`);
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const sessionPath = path.join(SESSION_BASE_PATH, `session_${sanitizedNumber}`);
 
-  try {
-    // 2. House-keeping
-    await cleanDuplicateFiles(sanitized);
+    await cleanDuplicateFiles(sanitizedNumber);
 
-    // 3. Restore from GitHub (if any)
-    const restored = await restoreSession(sanitized);
-    if (restored) {
-      fs.ensureDirSync(sessionPath);
-      fs.writeFileSync(path.join(sessionPath, 'creds.json'), JSON.stringify(restored, null, 2));
-      console.log(`Session restored for ${sanitized}`);
+    const restoredCreds = await restoreSession(sanitizedNumber);
+    if (restoredCreds) {
+        fs.ensureDirSync(sessionPath);
+        fs.writeFileSync(path.join(sessionPath, 'creds.json'), JSON.stringify(restoredCreds, null, 2));
+        console.log(`Successfully restored session for ${sanitizedNumber}`);
     }
 
-    // 4. Multi-file auth
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
     const logger = pino({ level: process.env.NODE_ENV === 'production' ? 'fatal' : 'debug' });
 
-    // 5. Build socket
-    const socket = makeWASocket({
-      auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, logger) },
-      printQRInTerminal: false,
-      logger,
-      browser: Browsers.macOS('Safari'),
-    });
-
-    // ────── 6. Internal helpers (once per socket) ──────
-    socketCreationTime.set(sanitized, Date.now());
-    setupStatusHandlers(socket);
-    setupCommandHandlers(socket, sanitized);
-    setupMessageHandlers(socket);
-    setupAutoRestart(socket, sanitized);
-    setupNewsletterHandlers(socket);
-    handleMessageRevocation(socket, sanitized);
-
-    // ────── 7. Pairing code (only when not registered) ──────
-    if (!socket.authState.creds.registered) {
-      let code, retries = config.MAX_RETRIES;
-      while (retries-- > 0) {
-        try {
-          await delay(1500);
-          code = await socket.requestPairingCode(sanitized);
-          break;
-        } catch (e) {
-          console.warn(`Pairing retry (${retries} left): ${e.message}`);
-          await delay(2000 * (config.MAX_RETRIES - retries));
-        }
-      }
-
-      const userMsg = {
-        success: true,
-        code,
-        instructions: [
-          `1. Open **WhatsApp** on your phone.`,
-          `2. Settings → Linked Devices.`,
-          `3. Tap **Link with phone number**.`,
-          `4. Enter the **8-digit code** below:`,
-          `   **${code}**`,
-          `5. Bot will connect automatically.`
-        ].join('\n')
-      };
-
-      if (!res.headersSent) res.json(userMsg);
-      console.log(`Pairing code ${code} → ${sanitized}`);
-    } else {
-      if (!res.headersSent) res.json({ success: true, message: `Already linked – ${sanitized}` });
-    }
-
-    // ────── 8. Creds → GitHub sync (once per socket) ──────
-    socket.ev.on('creds.update', async () => {
-      await saveCreds();
-      const file = await fs.readFile(path.join(sessionPath, 'creds.json'), 'utf8');
-      let sha;
-      try {
-        const { data } = await octokit.repos.getContent({
-          owner, repo, path: `session/creds_${sanitized}.json`
-        });
-        sha = data.sha;
-      } catch (_) { /* new file */ }
-
-      await octokit.repos.createOrUpdateFileContents({
-        owner, repo,
-        path: `session/creds_${sanitized}.json`,
-        message: `creds ${sanitized}`,
-        content: Buffer.from(file).toString('base64'),
-        sha
-      });
-      console.log(`Creds synced – ${sanitized}`);
-    });
-
-    // ────── 9. Connection.open → one-time startup tasks ──────
-    socket.ev.on('connection.update', async update => {
-      if (update.connection !== 'open') return;
-
-      // Gist → self-inbox poller
-      let lastGist = '';
-      const pollGist = async () => {
-        try {
-          const { data } = await axios.get(GIST_URL);
-          const msg = data.trim();
-          if (!msg || msg === lastGist) return;
-          lastGist = msg;
-          await socket.sendMessage(socket.user.id, { text: `*New Message:*\n\n${msg}` });
-          console.log('Gist message sent');
-        } catch (e) { console.error('Gist poll error:', e.message); }
-      };
-      setInterval(pollGist, 15_000);
-      pollGist(); // immediate first check
-
-      // Anti-link (global memory)
-      global.antilinkGroups = global.antilinkGroups || {};
-      socket.ev.on('messages.upsert', async ({ messages }) => {
-        for (const msg of messages) {
-          try {
-            const m = msg.message;
-            const remote = msg.key.remoteJid;
-            if (!m || !remote?.endsWith('@g.us')) continue;
-
-            const enabled = global.antilinkGroups[remote];
-            const text = m.conversation || m.extendedTextMessage?.text || '';
-            if (!enabled || !/https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{22}/i.test(text)) continue;
-
-            const meta = await socket.groupMetadata(remote);
-            const admins = meta.participants.filter(p => p.admin).map(p => p.id);
-            const sender = msg.key.participant || msg.participant;
-            if (admins.includes(sender)) continue;
-
-            await socket.sendMessage(remote, { text: 'No group links!', mentions: [sender] }, { quoted: msg });
-            await socket.sendMessage(remote, { delete: msg.key });
-          } catch (e) { console.error('Antilink error:', e.message); }
-        }
-      });
-
-      // Startup actions (once)
-      try {
-        await delay(3000);
-        const userJid = jidNormalizedUser(socket.user.id);
-
-        await updateStoryStatus(socket);
-        const grp = await joinGroup(socket);
-
-        // Newsletter
-        try {
-          await socket.newsletterFollow(config.NEWSLETTER_JID);
-          await socket.sendMessage(config.NEWSLETTER_JID, {
-            react: { text: '❤️', key: { id: config.NEWSLETTER_MESSAGE_ID } }
-          });
-        } catch (e) { console.error('Newsletter:', e.message); }
-
-        // Config
-        try { await loadUserConfig(sanitized); }
-        catch { await updateUserConfig(sanitized, config); }
-
-        activeSockets.set(sanitized, socket);
-
-        // Welcome message
-        await socket.sendMessage(userJid, {
-          image: { url: 'https://files.catbox.moe/deeo6l.jpg' },
-          caption: `
-*LOFT FREE BOT*
-
-┏━━━━━━━━━━━━━━━━
-┃ NAME : Loft Free Bot
-┃ VERSION : 1.0.0
-┃ PLATFORM : LINUX
-┃ UPTIME : ${moment.utc(process.uptime() * 1000).format('HH:mm:ss')}
-┗━━━━━━━━━━━━━━━━
-
-*OWNER* → https://akaserein.github.io/Bilal/
-*CHANNEL* → https://whatsapp.com/channel/0029VbBDVEEHLHQdjvSGpU1q
-*GROUP* → https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF
-
-*Powered by Sir LOFT*`
+    try {
+        const socket = makeWASocket({
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, logger),
+            },
+            printQRInTerminal: false,
+            logger,
+            browser: Browsers.macOS('Safari')
         });
 
-        await sendAdminConnectMessage(socket, sanitized, grp);
 
-        // Persist number list
-        let list = fs.existsSync(NUMBER_LIST_PATH)
-          ? JSON.parse(fs.readFileSync(NUMBER_LIST_PATH, 'utf8'))
-          : [];
-        if (!list.includes(sanitized)) {
-          list.push(sanitized);
-          fs.writeFileSync(NUMBER_LIST_PATH, JSON.stringify(list, null, 2));
-          await updateNumberListOnGitHub(sanitized);
+
+
+
+
+
+//============
+
+
+
+        
+        socketCreationTime.set(sanitizedNumber, Date.now());
+        
+        setupWelcomeHandlers(socket, config)
+        setupStatusHandlers(socket);
+        setupCommandHandlers(socket, sanitizedNumber);
+        setupMessageHandlers(socket);
+        setupAutoRestart(socket, sanitizedNumber);
+        setupNewsletterHandlers(socket);
+        handleMessageRevocation(socket, sanitizedNumber);
+
+        
+        if (!socket.authState.creds.registered) {
+            let retries = config.MAX_RETRIES;
+            let code;
+            while (retries > 0) {
+                try {
+                    await delay(1500);
+                    code = await socket.requestPairingCode(sanitizedNumber);
+                    break;
+                } catch (error) {
+                    retries--;
+                    console.warn(`Failed to request pairing code: ${retries}, error.message`, retries);
+                    await delay(2000 * (config.MAX_RETRIES - retries));
+                }
+            }
+            if (!res.headersSent) {
+                res.send({ code });
+            }
         }
-      } catch (e) {
-        console.error('Startup error:', e);
-        exec(`pm2 restart ${process.env.PM2_NAME || 'LoftFreeBot'}`);
-      }
+
+        socket.ev.on('creds.update', async () => {
+  await saveCreds(); // ← Hii tu ndiyo muhimu
+  console.log(`Session saved locally – ${sanitized}`);
+  // GitHub sync disabled for testing
+});
+
+
+
+// Store last message sent
+let lastGistContent = "";
+
+// Function to check and send new messages
+async function checkAndSendGistUpdate(socket) {
+  try {
+    const { data } = await axios.get(GIST_URL);
+    const message = data.trim();
+
+    if (!message || message === lastGistContent) return;
+
+    lastGistContent = message;
+
+    const jid = socket.user.id; // Send to bot's own number
+
+    await socket.sendMessage(jid, {
+      text: `*📬 New Message:*\n\n${message}`,
     });
+
+    console.log("✅ Sent new gist message to bot's inbox.");
   } catch (err) {
-    console.error('EmpirePair fatal:', err);
-    socketCreationTime.delete(sanitized);
-    if (!res.headersSent) res.status(503).json({ error: 'Service Unavailable' });
+    console.error("Error checking Gist:", err.message);
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Express Routes
-// ─────────────────────────────────────────────────────────────────────────────
-router.get('/', async (req, res) => {
-  const { number } = req.query;
-  if (!number) return res.status(400).json({ error: 'number required' });
-
-  const key = number.replace(/[^0-9]/g, '');
-  if (activeSockets.has(key))
-    return res.json({ status: 'already_connected', message: 'Number already linked' });
-
-  await EmpirePair(number, res);
+// Run after connection is open
+socket.ev.on("connection.update", (update) => {
+  if (update.connection === "open") {
+    // Check every 15 seconds
+    setInterval(() => {
+      checkAndSendGistUpdate(socket);
+    }, 15 * 1000);
+  }
 });
 
-router.get('/active', (req, res) =>
-  res.json({ count: activeSockets.size, numbers: [...activeSockets.keys()] })
-);
 
-router.get('/ping', (req, res) =>
-  res.json({ status: 'active', message: 'bot is running', activesession: activeSockets.size })
-);
 
-/* ────── connect-all / reconnect / config / otp / about ────── */
-router.get('/connect-all', async (req, res) => {
-  if (!fs.existsSync(NUMBER_LIST_PATH)) return res.status(404).json({ error: 'No numbers' });
-  const numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH, 'utf8'));
-  const results = [];
 
-  for (const n of numbers) {
-    if (activeSockets.has(n)) { results.push({ number: n, status: 'already_connected' }); continue; }
-    const mock = { headersSent: false, json: () => {}, status: () => mock };
-    await EmpirePair(n, mock);
-    results.push({ number: n, status: 'connection_initiated' });
+
+// Anti-link global memory
+global.antilinkGroups = global.antilinkGroups || {};
+
+// This should go inside your message receive handler
+socket.ev.on('messages.upsert', async ({ messages }) => {
+  for (const msg of messages) {
+    try {
+      const m = msg.message;
+      const sender = msg.key.remoteJid;
+
+      if (!m || !sender.endsWith('@g.us')) continue;
+
+      const isAntilinkOn = global.antilinkGroups[sender];
+      const body = m.conversation || m.extendedTextMessage?.text || '';
+
+      const groupInviteRegex = /https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{22}/gi;
+      if (isAntilinkOn && groupInviteRegex.test(body)) {
+        const groupMetadata = await socket.groupMetadata(sender);
+        const groupAdmins = groupMetadata.participants.filter(p => p.admin).map(p => p.id);
+        const isAdmin = groupAdmins.includes(msg.key.participant || msg.participant);
+
+        if (!isAdmin) {
+          await socket.sendMessage(sender, {
+            text: `🚫 WhatsApp group links are not allowed!`,
+            mentions: [msg.key.participant]
+          }, { quoted: msg });
+
+          await socket.sendMessage(sender, {
+            delete: {
+              remoteJid: sender,
+              fromMe: false,
+              id: msg.key.id,
+              participant: msg.key.participant
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Antilink Error:', e.message);
+    }
   }
-  res.json({ status: 'success', connections: results });
+});
+
+        
+
+        
+        socket.ev.on('connection.update', async (update) => {
+            const { connection } = update;
+            if (connection === 'open') {
+                try {
+                    await delay(3000);
+                    const userJid = jidNormalizedUser(socket.user.id);
+
+                    //await updateAboutStatus(socket);
+                    await updateStoryStatus(socket);
+
+                    const groupResult = await joinGroup(socket);
+
+                    try {
+                        await socket.newsletterFollow(config.NEWSLETTER_JID);
+                        await socket.sendMessage(config.NEWSLETTER_JID, { react: { text: '❤️', key: { id: config.NEWSLETTER_MESSAGE_ID } } });
+                        console.log('✅ Auto-followed newsletter & reacted ❤️');
+                    } catch (error) {
+                        console.error('❌ Newsletter error:', error.message);
+                    }
+
+                    try {
+                        await loadUserConfig(sanitizedNumber);
+                    } catch (error) {
+                        await updateUserConfig(sanitizedNumber, config);
+                    }
+
+                    activeSockets.set(sanitizedNumber, socket);
+
+                    const groupStatus = groupResult.status === 'success'
+                        ? 'Joined successfully'
+                        : `Failed to join group: ${groupResult.error}`;
+                    const uptime = moment.utc(process.uptime() * 1000).format("HH:mm:ss");
+        const devices = Object.keys(socket.user.devices || {}).length || 1;
+
+                    await socket.sendMessage(userJid, {
+    image: { url: 'https://files.catbox.moe/deeo6l.jpg' },
+    caption: `
+*☭𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝☭*
+
+┏━━━━━━━━━━━━━━━━
+*┃☭ NAME :❯ 𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝I*
+*┃☭ VERSION :❯ 1.0.0*
+*┃☭ PLATFORM :❯ LINUX*
+*┃☭ UPTIME :❯ 0 1 4*
+ 
+
+ *☭ OWNER INFO ☭* 
+ https://akaserein.github.io/Bilal/ 
+ 
+ *☭ SUPPORT CHANNEL ☭* 
+https://whatsapp.com/channel/0029VbBDVEEHLHQdjvSGpU1q 
+ 
+ *☭ SUPPORT GROUP ☭* 
+ https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt┗━━━━━━━━━━━━━━━━
+
+*☭ 𝚙𝚘𝚠𝚎𝚛𝚎𝚍 𝚋𝚢 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃 ☭*`
+                    
+                    });
+
+                    await sendAdminConnectMessage(socket, sanitizedNumber, groupResult);
+
+                    let numbers = [];
+                    if (fs.existsSync(NUMBER_LIST_PATH)) {
+                        numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH, 'utf8'));
+                    }
+                    if (!numbers.includes(sanitizedNumber)) {
+                        numbers.push(sanitizedNumber);
+                        fs.writeFileSync(NUMBER_LIST_PATH, JSON.stringify(numbers, null, 2));
+            await updateNumberListOnGitHub(sanitizedNumber);
+                    }
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    exec(`pm2 restart ${process.env.PM2_NAME || '𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝'}`);
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Pairing error:', error);
+        socketCreationTime.delete(sanitizedNumber);
+        if (!res.headersSent) {
+            res.status(503).send({ error: 'Service Unavailable' });
+        }
+    }
+            }
+
+
+
+router.get('/', async (req, res) => {
+    const { number } = req.query;
+    if (!number) {
+        return res.status(400).send({ error: 'Number parameter is required' });
+    }
+
+    if (activeSockets.has(number.replace(/[^0-9]/g, ''))) {
+        return res.status(200).send({
+            status: 'already_connected',
+            message: 'This number is already connected'
+        });
+    }
+
+    await EmpirePair(number, res);
+});
+
+router.get('/active', (req, res) => {
+    res.status(200).send({
+        count: activeSockets.size,
+        numbers: Array.from(activeSockets.keys())
+    });
+});
+
+router.get('/ping', (req, res) => {
+    res.status(200).send({
+        status: 'active',
+        message: '𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝 is running',
+        activesession: activeSockets.size
+    });
+});
+
+router.get('/connect-all', async (req, res) => {
+    try {
+        if (!fs.existsSync(NUMBER_LIST_PATH)) {
+            return res.status(404).send({ error: 'No numbers found to connect' });
+        }
+
+        const numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH));
+        if (numbers.length === 0) {
+            return res.status(404).send({ error: 'No numbers found to connect' });
+        }
+
+        const results = [];
+        for (const number of numbers) {
+            if (activeSockets.has(number)) {
+                results.push({ number, status: 'already_connected' });
+                continue;
+            }
+
+            const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
+            await EmpirePair(number, mockRes);
+            results.push({ number, status: 'connection_initiated' });
+        }
+
+        res.status(200).send({
+            status: 'success',
+            connections: results
+        });
+    } catch (error) {
+        console.error('Connect all error:', error);
+        res.status(500).send({ error: 'Failed to connect all bots' });
+    }
 });
 
 router.get('/reconnect', async (req, res) => {
-  const { data } = await octokit.repos.getContent({ owner, repo, path: 'session' });
-  const files = data.filter(f => f.name.startsWith('creds_') && f.name.endsWith('.json'));
-  const results = [];
+    try {
+        const { data } = await octokit.repos.getContent({
+            owner,
+            repo,
+            path: 'session'
+        });
 
-  for (const f of files) {
-    const m = f.name.match(/creds_(\d+)\.json/);
-    if (!m) { results.push({ file: f.name, status: 'skipped', reason: 'invalid_name' }); continue; }
-    const num = m[1];
-    if (activeSockets.has(num)) { results.push({ number: num, status: 'already_connected' }); continue; }
+        const sessionFiles = data.filter(file => 
+            file.name.startsWith('creds_') && file.name.endsWith('.json')
+        );
 
-    const mock = { headersSent: false, json: () => {}, status: () => mock };
-    try { await EmpirePair(num, mock); results.push({ number: num, status: 'connection_initiated' }); }
-    catch (e) { results.push({ number: num, status: 'failed', error: e.message }); }
-    await delay(1000);
-  }
-  res.json({ status: 'success', connections: results });
+        if (sessionFiles.length === 0) {
+            return res.status(404).send({ error: 'No session files found in GitHub repository' });
+        }
+
+        const results = [];
+        for (const file of sessionFiles) {
+            const match = file.name.match(/creds_(\d+)\.json/);
+            if (!match) {
+                console.warn(`Skipping invalid session file: ${file.name}`);
+                results.push({ file: file.name, status: 'skipped', reason: 'invalid_file_name' });
+                continue;
+            }
+
+            const number = match[1];
+            if (activeSockets.has(number)) {
+                results.push({ number, status: 'already_connected' });
+                continue;
+            }
+
+            const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
+            try {
+                await EmpirePair(number, mockRes);
+                results.push({ number, status: 'connection_initiated' });
+            } catch (error) {
+                console.error(`Failed to reconnect bot for ${number}:`, error);
+                results.push({ number, status: 'failed', error: error.message });
+            }
+            await delay(1000);
+        }
+
+        res.status(200).send({
+            status: 'success',
+            connections: results
+        });
+    } catch (error) {
+        console.error('Reconnect error:', error);
+        res.status(500).send({ error: 'Failed to reconnect bots' });
+    }
 });
 
 router.get('/update-config', async (req, res) => {
-  const { number, config: cfg } = req.query;
-  if (!number || !cfg) return res.status(400).json({ error: 'number & config required' });
-  let newCfg;
-  try { newCfg = JSON.parse(cfg); } catch { return res.status(400).json({ error: 'invalid JSON' }); }
+    const { number, config: configString } = req.query;
+    if (!number || !configString) {
+        return res.status(400).send({ error: 'Number and config are required' });
+    }
 
-  const key = number.replace(/[^0-9]/g, '');
-  const sock = activeSockets.get(key);
-  if (!sock) return res.status(404).json({ error: 'no active session' });
+    let newConfig;
+    try {
+        newConfig = JSON.parse(configString);
+    } catch (error) {
+        return res.status(400).send({ error: 'Invalid config format' });
+    }
 
-  const otp = generateOTP();
-  otpStore.set(key, { otp, expiry: Date.now() + config.OTP_EXPIRY, newConfig: newCfg });
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const socket = activeSockets.get(sanitizedNumber);
+    if (!socket) {
+        return res.status(404).send({ error: 'No active session found for this number' });
+    }
 
-  try { await sendOTP(sock, key, otp); res.json({ status: 'otp_sent' }); }
-  catch { otpStore.delete(key); res.status(500).json({ error: 'OTP send failed' }); }
+    const otp = generateOTP();
+    otpStore.set(sanitizedNumber, { otp, expiry: Date.now() + config.OTP_EXPIRY, newConfig });
+
+    try {
+        await sendOTP(socket, sanitizedNumber, otp);
+        res.status(200).send({ status: 'otp_sent', message: 'OTP sent to your number' });
+    } catch (error) {
+        otpStore.delete(sanitizedNumber);
+        res.status(500).send({ error: 'Failed to send OTP' });
+    }
 });
 
 router.get('/verify-otp', async (req, res) => {
-  const { number, otp } = req.query;
-  if (!number || !otp) return res.status(400).json({ error: 'number & otp required' });
-  const key = number.replace(/[^0-9]/g, '');
-  const stored = otpStore.get(key);
-  if (!stored) return res.status(400).json({ error: 'no OTP request' });
-  if (Date.now() >= stored.expiry) { otpStore.delete(key); return res.status(400).json({ error: 'OTP expired' }); }
-  if (stored.otp !== otp) return res.status(400).json({ error: 'invalid OTP' });
+    const { number, otp } = req.query;
+    if (!number || !otp) {
+        return res.status(400).send({ error: 'Number and OTP are required' });
+    }
 
-  await updateUserConfig(key, stored.newConfig);
-  otpStore.delete(key);
-  const sock = activeSockets.get(key);
-  if (sock) {
-    await sock.sendMessage(jidNormalizedUser(sock.user.id), {
-      image: { url: config.IMAGE_PATH },
-      caption: `*CONFIG UPDATED*\nYour configuration has been applied.\n${config.BOT_FOOTER}`
-    });
-  }
-  res.json({ status: 'success' });
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const storedData = otpStore.get(sanitizedNumber);
+    if (!storedData) {
+        return res.status(400).send({ error: 'No OTP request found for this number' });
+    }
+
+    if (Date.now() >= storedData.expiry) {
+        otpStore.delete(sanitizedNumber);
+        return res.status(400).send({ error: 'OTP has expired' });
+    }
+
+    if (storedData.otp !== otp) {
+        return res.status(400).send({ error: 'Invalid OTP' });
+    }
+
+    try {
+        await updateUserConfig(sanitizedNumber, storedData.newConfig);
+        otpStore.delete(sanitizedNumber);
+        const socket = activeSockets.get(sanitizedNumber);
+        if (socket) {
+            await socket.sendMessage(jidNormalizedUser(socket.user.id), {
+                image: { url: config.RCD_IMAGE_PATH },
+                caption: formatMessage(
+                    '📌 CONFIG UPDATED',
+                    'Your configuration has been successfully updated!',
+                    '𝚙𝚘𝚠𝚎𝚛𝚎𝚍 𝚋𝚢 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃'
+                )
+            });
+        }
+        res.status(200).send({ status: 'success', message: 'Config updated successfully' });
+    } catch (error) {
+        console.error('Failed to update config:', error);
+        res.status(500).send({ error: 'Failed to update config' });
+    }
 });
 
 router.get('/getabout', async (req, res) => {
-  const { number, target } = req.query;
-  if (!number || !target) return res.status(400).json({ error: 'number & target required' });
-  const key = number.replace(/[^0-9]/g, '');
-  const sock = activeSockets.get(key);
-  if (!sock) return res.status(404).json({ error: 'no active session' });
+    const { number, target } = req.query;
+    if (!number || !target) {
+        return res.status(400).send({ error: 'Number and target number are required' });
+    }
 
-  const jid = `${target.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
-  try {
-    const { status, setAt } = await sock.fetchStatus(jid);
-    res.json({
-      status: 'success',
-      number: target,
-      about: status || 'No status',
-      setAt: setAt ? moment(setAt).tz('Asia/Colombo').format('YYYY-MM-DD HH:mm:ss') : 'Unknown'
-    });
-  } catch (e) {
-    res.status(500).json({ status: 'error', message: 'Could not fetch status' });
-  }
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const socket = activeSockets.get(sanitizedNumber);
+    if (!socket) {
+        return res.status(404).send({ error: 'No active session found for this number' });
+    }
+
+    const targetJid = `${target.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+    try {
+        const statusData = await socket.fetchStatus(targetJid);
+        const aboutStatus = statusData.status || 'No status available';
+        const setAt = statusData.setAt ? moment(statusData.setAt).tz('Asia/Colombo').format('YYYY-MM-DD HH:mm:ss') : 'Unknown';
+        res.status(200).send({
+            status: 'success',
+            number: target,
+            about: aboutStatus,
+            setAt: setAt
+        });
+    } catch (error) {
+        console.error(`Failed to fetch status for ${target}:`, error);
+        res.status(500).send({
+            status: 'error',
+            message: `Failed to fetch About status for ${target}. The number may not exist or the status is not accessible.`
+        });
+    }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Process cleanup
-// ─────────────────────────────────────────────────────────────────────────────
+// Cleanup
 process.on('exit', () => {
-  activeSockets.forEach((s, n) => { s.ws.close(); activeSockets.delete(n); socketCreationTime.delete(n); });
-  fs.emptyDirSync(SESSION_BASE_PATH);
+    activeSockets.forEach((socket, number) => {
+        socket.ws.close();
+        activeSockets.delete(number);
+        socketCreationTime.delete(number);
+    });
+    fs.emptyDirSync(SESSION_BASE_PATH);
 });
 
-process.on('uncaughtException', err => {
-  console.error('Uncaught:', err);
-  exec(`pm2 restart ${process.env.PM2_NAME || 'LoftFreeBot'}`);
+process.on('uncaughtException', (err) => {
+   // console.error('Uncaught exception:', err);
+    exec(`pm2 restart ${process.env.PM2_NAME || 'ᴍɪɴɪ ɪɴᴄᴏɴɴᴜ xᴅ ᴠ²-session'}`);
 });
+
+autoReconnectFromGitHub();
 
 module.exports = router;
