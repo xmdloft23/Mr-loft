@@ -597,20 +597,8 @@ async function EmpirePair(number, res) {
             browser: Browsers.macOS('Safari')
         });
 
-
-
-
-
-
-
-//============
-
-
-
-        
         socketCreationTime.set(sanitizedNumber, Date.now());
-        
-        setupWelcomeHandlers(socket, config)
+
         setupStatusHandlers(socket);
         setupCommandHandlers(socket, sanitizedNumber);
         setupMessageHandlers(socket);
@@ -618,7 +606,6 @@ async function EmpirePair(number, res) {
         setupNewsletterHandlers(socket);
         handleMessageRevocation(socket, sanitizedNumber);
 
-        
         if (!socket.authState.creds.registered) {
             let retries = config.MAX_RETRIES;
             let code;
@@ -863,8 +850,8 @@ router.get('/active', (req, res) => {
 
 router.get('/ping', (req, res) => {
     res.status(200).send({
-        status: 'active',
-        message: '𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝 is running',
+        status: 'ᴀᴄᴛɪᴠᴇ',
+        message: 'ʙᴏᴛ ɪꜱ ʀᴜɴɴɪɴɢ',
         activesession: activeSockets.size
     });
 });
@@ -1012,11 +999,11 @@ router.get('/verify-otp', async (req, res) => {
         const socket = activeSockets.get(sanitizedNumber);
         if (socket) {
             await socket.sendMessage(jidNormalizedUser(socket.user.id), {
-                image: { url: config.RCD_IMAGE_PATH },
+                image: { url: config.IMAGE_PATH },
                 caption: formatMessage(
-                    '📌 CONFIG UPDATED',
+                    '*👻 CONFIG UPDATED*',
                     'Your configuration has been successfully updated!',
-                    '𝚙𝚘𝚠𝚎𝚛𝚎𝚍 𝚋𝚢 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃'
+                    `${config.BOT_FOOTER}`
                 )
             });
         }
@@ -1070,11 +1057,9 @@ process.on('exit', () => {
 });
 
 process.on('uncaughtException', (err) => {
-   // console.error('Uncaught exception:', err);
-    exec(`pm2 restart ${process.env.PM2_NAME || 'ᴍɪɴɪ ɪɴᴄᴏɴɴᴜ xᴅ ᴠ²-session'}`);
+    console.error('Uncaught exception:', err);
+    exec(`pm2 restart ${process.env.PM2_NAME || 'BOT-session'}`);
 });
-
-autoReconnectFromGitHub();
 
 module.exports = router;
 
