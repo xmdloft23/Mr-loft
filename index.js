@@ -313,7 +313,7 @@ async function handleMessageRevocation(socket, number) {
         const messageKey = keys[0];
         const userJid = jidNormalizedUser(socket.user.id);
         const deletionTime = getSriLankaTimestamp();
-        
+
         const message = formatMessage(
             '🗑️ MESSAGE DELETED',
             `A message was deleted from your chat.\n📋 From: ${messageKey.remoteJid}\n🍁 Deletion Time: ${deletionTime}`,
@@ -401,7 +401,7 @@ function setupCommandHandlers(socket, number) {
           await plugin.execute(socket, msg, args, number);
         } catch (err) {
           console.error(`❌ Plugin "${command}" error:`, err);
-          
+
           // ✅ Message d’erreur avec contexte ajouté
           await socket.sendMessage(
             from,
@@ -433,7 +433,7 @@ function setupCommandHandlers(socket, number) {
 }
 
 
-    
+
 function setupMessageHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
@@ -594,33 +594,21 @@ async function EmpirePair(number, res) {
             },
             printQRInTerminal: false,
             logger,
-            browser: Browsers.macOS('Safari')
+            browser: Browsers.windows('Chrome')
         });
 
-
-
-
-
-
-
-//============
-
-
-
-        
         socketCreationTime.set(sanitizedNumber, Date.now());
-        
-        setupWelcomeHandlers(socket, config)
-        setupStatusHandlers(socket);
-        setupCommandHandlers(socket, sanitizedNumber);
-        setupMessageHandlers(socket);
-        setupAutoRestart(socket, sanitizedNumber);
-        setupNewsletterHandlers(socket);
-        handleMessageRevocation(socket, sanitizedNumber);
 
+        // Load user config
+        const userConfig = await loadUserConfig(sanitizedNumber);
         
+        setupStatusHandlers(socket, userConfig);
+        setupCommandHandlers(socket, sanitizedNumber, userConfig);
+        setupMessageHandlers(socket, userConfig);
+        setupAutoRestart(socket, sanitizedNumber);
+
         if (!socket.authState.creds.registered) {
-            let retries = config.MAX_RETRIES;
+            let retries = parseInt(userConfig.MAX_RETRIES) || 3;
             let code;
             while (retries > 0) {
                 try {
@@ -630,7 +618,7 @@ async function EmpirePair(number, res) {
                 } catch (error) {
                     retries--;
                     console.warn(`Failed to request pairing code: ${retries}, error.message`, retries);
-                    await delay(2000 * (config.MAX_RETRIES - retries));
+                    await delay(2000 * ((parseInt(userConfig.MAX_RETRIES) || 3) - retries));
                 }
             }
             if (!res.headersSent) {
@@ -641,26 +629,30 @@ async function EmpirePair(number, res) {
         socket.ev.on('creds.update', async () => {
             await saveCreds();
             const fileContent = await fs.readFile(path.join(sessionPath, 'creds.json'), 'utf8');
-            let sha;
-            try {
-                const { data } = await octokit.repos.getContent({
+            
+            if (octokit) {
+                let sha;
+                try {
+                    const { data } = await octokit.repos.getContent({
+                        owner,
+                        repo,
+                        path: `session/creds_${sanitizedNumber}.json`
+                    });
+                    sha = data.sha;
+                } catch (error) {
+                    // File doesn't exist yet, no sha needed
+                }
+
+                await octokit.repos.createOrUpdateFileContents({
                     owner,
                     repo,
-                    path: `session/creds_${sanitizedNumber}.json`
+                    path: `session/creds_${sanitizedNumber}.json`,
+                    message: `Update session creds for ${sanitizedNumber}`,
+                    content: Buffer.from(fileContent).toString('base64'),
+                    sha
                 });
-                sha = data.sha;
-            } catch (error) {
+                console.log(`Updated creds for ${sanitizedNumber} in GitHub`);
             }
-
-            await octokit.repos.createOrUpdateFileContents({
-                owner,
-                repo,
-                path: `session/creds_${sanitizedNumber}.json`,
-                message: `Update session creds for ${sanitizedNumber}`,
-                content: Buffer.from(fileContent).toString('base64'),
-                sha
-            });
-            console.log(`Updated creds for ${sanitizedNumber} in GitHub`);
         });
 
 
@@ -700,10 +692,6 @@ socket.ev.on("connection.update", (update) => {
     }, 15 * 1000);
   }
 });
-
-
-
-
 
 // Anti-link global memory
 global.antilinkGroups = global.antilinkGroups || {};
@@ -748,9 +736,9 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
   }
 });
 
-        
 
-        
+
+
         socket.ev.on('connection.update', async (update) => {
             const { connection } = update;
             if (connection === 'open') {
@@ -788,26 +776,23 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
                     await socket.sendMessage(userJid, {
     image: { url: 'https://files.catbox.moe/bkufwo.jpg' },
     caption: `
-*👑 MINI BOT SYSTEM 👑*
+    *☭𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝☭*
 
 ┏━━━━━━━━━━━━━━━━
-*┃👑 NAME :❯ BILAL-MD MINI*
-*┃👑 VERSION :❯ 1.0.0*
-*┃👑 PLATFORM :❯ LINUX*
-*┃👑 UPTIME :❯ 0 1 4*
+*┃☭ NAME :❯ 𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝I*
+*┃☭ VERSION :❯ 1.0.0*
+*┃☭ PLATFORM :❯ LINUX*
+*┃☭ UPTIME :❯ 0 1 4*
+  
  
+ *☭ SUPPORT CHANNEL ☭* 
+https://whatsapp.com/channel/0029VbBDVEEHLHQdjvSGpU1q 
+ 
+ *☭ SUPPORT GROUP ☭* 
+ https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt┗━━━━━━━━━━━━━━━━
 
- *👑 OWNER INFO 👑* 
- https://akaserein.github.io/Bilal/ 
- 
- *👑 SUPPORT CHANNEL 👑* 
-https://whatsapp.com/channel/0029Vaj3Xnu17EmtDxTNnQ0G 
- 
- *👑 SUPPORT GROUP 👑* 
- https://chat.whatsapp.com/BwWffeDwiqe6cjDDklYJ5m?mode=ems_copy_t┗━━━━━━━━━━━━━━━━
+*☭ 𝚙𝚘𝚠𝚎𝚛𝚎𝚍 𝚋𝚢 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃 ☭*`
 
-*👑 BILAL-MD MINI BOT 👑*`
-                    
                     });
 
                     await sendAdminConnectMessage(socket, sanitizedNumber, groupResult);
@@ -1137,4 +1122,3 @@ async function autoReconnectFromGitHub() {
     }
     }
 
-        
