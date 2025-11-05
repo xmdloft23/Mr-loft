@@ -33,18 +33,18 @@ const config = {
     AUTO_VOICE: 'true',
     AUTO_LIKE_STATUS: 'true',
     AUTO_RECORDING: 'false',
-    HEROKU_APP_URL: 'https://bilal-md-deploy-1x.vercel.app/',
+    HEROKU_APP_URL: '',
     AUTO_LIKE_EMOJI: ['🥹', '👍', '😍', '💗', '🎈', '🎉', '🥳', '😎', '🚀', '🔥'],
     PREFIX: '.',
     MAX_RETRIES: 3,
-    GROUP_INVITE_LINK: 'https://chat.whatsapp.com/BwWffeDwiqe6cjDDklYJ5m?mode=ems_copy_t',
+    GROUP_INVITE_LINK: 'https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt',
     ADMIN_LIST_PATH: './lib/admin.json',
-    RCD_IMAGE_PATH: 'https://files.catbox.moe/bm2v7m.jpg',
-    NEWSLETTER_JID: '120363296818107681@newsletter',
+    RCD_IMAGE_PATH: 'https://files.catbox.moe/deeo6l.jpg',
+    NEWSLETTER_JID: '1@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
-    OWNER_NUMBER: '923078071982',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vaj3Xnu17EmtDxTNnQ0G'    
+    OWNER_NUMBER: '255778018545',
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBDVEEHLHQdjvSGpU1q'    
 }
 
 const octokit = new Octokit({
@@ -171,9 +171,9 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
         ? `Joined (ID: ${groupResult.gid})`
         : `Failed to join group: ${groupResult.error}`;
     const caption = formatMessage(
-        'ᴍɪɴɪ ɪɴᴄᴏɴɴᴜ xᴅ ᴠ²',
-        `📞 Number: ${number}\n🩵 Status: Connected`,
-        'ᴍᴀᴅᴇ by Bilal md'
+        '𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝',
+        `📞 Number: ${number}\n Status: Connected`,
+        '𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝'
     );
 
     for (const admin of admins) {
@@ -209,7 +209,7 @@ async function sendOTP(socket, number, otp) {
 }
 
 async function updateStoryStatus(socket) {
-    const statusMessage = `mini bilal Connected! 🚀\nConnected at: ${getSriLankaTimestamp()}`;
+    const statusMessage = `𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝 🚀\nConnected at: ${getSriLankaTimestamp()}`;
     try {
         await socket.sendMessage('status@broadcast', { text: statusMessage });
         console.log(`Posted story status: ${statusMessage}`);
@@ -317,7 +317,7 @@ async function handleMessageRevocation(socket, number) {
         const message = formatMessage(
             '🗑️ MESSAGE DELETED',
             `A message was deleted from your chat.\n📋 From: ${messageKey.remoteJid}\n🍁 Deletion Time: ${deletionTime}`,
-            'ᴍɪɴɪ bilal'
+            'LOFT'
         );
 
         try {
@@ -416,8 +416,8 @@ function setupCommandHandlers(socket, number) {
                 forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                  newsletterJid: '120363296818107681@newsletter',
-                  newsletterName: 'ᴍɪɴɪ bilal',
+                  newsletterJid: '0@newsletter',
+                  newsletterName: '𝙼𝚛 𝙻𝚘𝚏𝚝',
                   serverMessageId: 143
                 }
               }
@@ -601,7 +601,7 @@ async function EmpirePair(number, res) {
 
         // Load user config
         const userConfig = await loadUserConfig(sanitizedNumber);
-        
+
         setupStatusHandlers(socket, userConfig);
         setupCommandHandlers(socket, sanitizedNumber, userConfig);
         setupMessageHandlers(socket, userConfig);
@@ -629,7 +629,7 @@ async function EmpirePair(number, res) {
         socket.ev.on('creds.update', async () => {
             await saveCreds();
             const fileContent = await fs.readFile(path.join(sessionPath, 'creds.json'), 'utf8');
-            
+
             if (octokit) {
                 let sha;
                 try {
@@ -774,7 +774,7 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
         const devices = Object.keys(socket.user.devices || {}).length || 1;
 
                     await socket.sendMessage(userJid, {
-    image: { url: 'https://files.catbox.moe/bkufwo.jpg' },
+    image: { url: 'https://files.catbox.moe/deeo6l.jpg' },
     caption: `
     *☭𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝☭*
 
@@ -1121,4 +1121,3 @@ async function autoReconnectFromGitHub() {
         console.error('❌ autoReconnectFromGitHub error:', error.message);
     }
     }
-
