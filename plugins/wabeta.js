@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const FILE_PATH = path.join(__dirname, '..', 'database', 'wabenews.json');
-const CHANNEL_JID = '1@newsletter';
+const CHANNEL_JID = '120363422731708290@newsletter';
 
 module.exports = {
   command: 'wabeta',
