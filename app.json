@@ -1,0 +1,18 @@
+{
+  "name": "♥️LOFT PAIR QR♥️",
+  "description": "SESSION ID GENERATOR FOR WHATSAPP BOTS",
+  "logo": "https://i.ibb.co/wspzc9t/IMG-20240328-WA0000.jpg",
+  "repository": "https://github.com/BiLaLTeCh05/Knight_Bot_Pair_Code",
+  "keywords": ["@LOFTINC"],
+  "success_url": "/", 
+  "buildpacks": [
+    { "url": "https://github.com/heroku/heroku-buildpack-nodejs#latest" }
+  ],
+  "env": {      
+    "MESSAGE": {
+      "description": "Msg Attached With Session ID",
+      "value": "🔰 BY || LOFT 🔰",
+      "required": false 
+    }
+  }
+}
