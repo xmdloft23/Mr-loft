@@ -40,7 +40,7 @@ const config = {
     GROUP_INVITE_LINK: 'https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt',
     ADMIN_LIST_PATH: './lib/admin.json',
     RCD_IMAGE_PATH: 'https://files.catbox.moe/deeo6l.jpg',
-    NEWSLETTER_JID: '1@newsletter',
+    NEWSLETTER_JID: '120363422731708290@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     OWNER_NUMBER: '255778018545',
