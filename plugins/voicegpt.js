@@ -29,7 +29,7 @@ let res = await fetchJson(`https://api.siputzx.my.id/api/ai/gpt3?prompt=kamu%20a
 const datas = res.data;
 const sender = msg.key.remoteJid;
         await socket.sendMessage(sender, {  
-            react: { text: '⏳', key: msg.key }  
+            react: { text: '🫠', key: msg.key }  
         });
 
 
