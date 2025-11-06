@@ -410,13 +410,13 @@ function setupCommandHandlers(socket, number) {
               caption: formatMessage(
                 '❌ ERROR',
                 `Command *${command}* failed!\n\n${err.message || err}`,
-                'ᴍɪɴɪ Bilal md'
+                '𝙼𝚛 𝙻𝚘𝚏𝚝'
               ),
               contextInfo: {
                 forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                  newsletterJid: '0@newsletter',
+                  newsletterJid: '120363422731708290@newsletter',
                   newsletterName: '𝙼𝚛 𝙻𝚘𝚏𝚝',
                   serverMessageId: 143
                 }
