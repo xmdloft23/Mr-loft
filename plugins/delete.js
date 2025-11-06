@@ -1,13 +1,3 @@
-
-const getGroupAdmins = (participants) => {
-	var admins = []
-	for (let i of participants) {
-		i.admin !== null  ? admins.push(i.id) : ''
-	}
-	return admins
-}
-
-
 module.exports = {
   command: "delete",
   desc: "Delete the replied message for everyone",
@@ -16,43 +6,37 @@ module.exports = {
   filename: __filename,
   fromMe: false,
 
-  async execute(socket, msg, args) {
-
-
-
-const stanzaId = msg.message.extendedTextMessage.contextInfo.stanzaId;
-    const participant = msg.message.extendedTextMessage.contextInfo.participant;
-
-const getGroupAdmins = (participants) => {
-	var admins = []
-	for (let i of participants) {
-		i.admin !== null  ? admins.push(i.id) : ''
-	}
-	return admins
-}
-
-
-	  
-    const from = msg.key.remoteJid;
-const isGroup = from.endsWith('@g.us')
-const groupAdmins = isGroup ? await getGroupAdmins(participants) : ''
-            const isAdmins = isGroup ? groupAdmins.includes(from) : false
-
-
-if (!isAdmins) {
-await socket.sendMessage(from, { text: "ONLY ADMINS CAN USE THIS CMD 🪄♻️" }, { quoted: msg });
-               }
-    
-
-    if (!msg.message?.extendedTextMessage?.contextInfo?.stanzaId) {
-      return await socket.sendMessage(from, { text: "❗ Please reply to the message you want to delete." }, { quoted: msg });
-    }
-
-    
-
-	  
+  async execute(sock, msg, args) {
     try {
-      await socket.sendMessage(from, {
+      const from = msg.key.remoteJid;
+      const isGroup = from.endsWith("@g.us");
+
+      if (!isGroup)
+        return await sock.sendMessage(from, { text: "*YEH COMMAND SIRF GROUPS ME USE HOTA HAI 😅*" }, { quoted: msg });
+
+      // Group metadata se participants nikal lo
+      const groupMetadata = await sock.groupMetadata(from);
+      const participants = groupMetadata.participants.map(p => p.id);
+      const groupAdmins = groupMetadata.participants
+        .filter(p => p.admin !== null)
+        .map(p => p.id);
+
+      // Sender admin check
+      const sender = msg.key.participant || msg.sender;
+      const isAdmin = groupAdmins.includes(sender);
+
+      if (!isAdmin)
+        return await sock.sendMessage(from, { text: "*YEH COMMAND SIRF ADMINS USE KAR SAKTE HAI ☺️❤️*" }, { quoted: msg });
+
+      // Reply check
+      const stanzaId = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+      const participant = msg.message?.extendedTextMessage?.contextInfo?.participant;
+
+      if (!stanzaId)
+        return await sock.sendMessage(from, { text: "*PEHLE MSG REPLY KARO, PHIR DELETE COMMAND USE KARO 🥳*" }, { quoted: msg });
+
+      // Delete message
+      await sock.sendMessage(from, {
         delete: {
           remoteJid: from,
           fromMe: false,
@@ -60,10 +44,12 @@ await socket.sendMessage(from, { text: "ONLY ADMINS CAN USE THIS CMD 🪄♻️"
           participant: participant,
         },
       });
+
+      await sock.sendMessage(from, { text: "*✅ Message delete kar diya gaya!*" }, { quoted: msg });
+
     } catch (err) {
       console.error("Delete Error:", err);
-      await socket.sendMessage(from, { text: "❌ Failed to delete the message." }, { quoted: msg });
+      await sock.sendMessage(msg.key.remoteJid, { text: "❌ Failed to delete the message." }, { quoted: msg });
     }
   }
 };
-          
