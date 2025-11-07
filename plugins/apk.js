@@ -1,5 +1,4 @@
 const fetch = require('node-fetch');
-const file_size_url = require('file_size_url');
 const { delay } = require('@whiskeysockets/baileys');
 const tools = require('../lib/config.js');
 
