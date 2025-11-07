@@ -1,7 +1,6 @@
 const { formatMessage } = require('../lib/formatter');
 const os = require('os');
 const moment = require('moment-timezone');
-const si = require('systeminformation'); // npm i systeminformation
 
 module.exports = {
   command: 'system',
