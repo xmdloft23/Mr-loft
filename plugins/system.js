@@ -64,10 +64,8 @@ module.exports = {
 *│*  *🔥 Node.js:* \`${nodeVersion}\`  
 *│*  
 *│*  *📦 Modules:* \`${loadedModules}\`  
-*│*  *👤 User:* \`${os.userInfo().username}\`  
-*│*  *📂 Path:* \`${process.cwd().split('/').pop()}\`  
-*│*  
-*╰━━━━━━━━━━━━━━━━━━━━━━━⭓*
+*│*  *👤 User:* \`${os.userInfo().username}\`
+ ╰━━━━━━━━━━━━━━━━━━━━━━━⭓*
 
 > *Powered by* _𝚂𝚒𝚛 𝙻𝙾𝙵𝚃 • Quantum Core v2_
       `).trim();
