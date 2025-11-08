@@ -20,13 +20,6 @@ module.exports = {
       // ────── RANDOM IMAGE POOL (High-quality, stable hosts) ──────
       const MENU_IMAGES = [
         'https://files.catbox.moe/deeo6l.jpg',
-        'https://h.uguu.se/tEviMVWD.jpg',
-        'https://o.uguu.se/FGDyxLGk.jpg',
-        'https://h.uguu.se/Leqyukxp.jpg',
-        'https://d.uguu.se/eOnVundp.jpg',
-        'https://h.uguu.se/DyPmSRHF.jpg',
-        'https://d.uguu.se/XCvZECji.jpg',
-        'https://h.uguu.se/gHfOEiLr.jpg',
       ];
 
       const getRandomImage = () => 
