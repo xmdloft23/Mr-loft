@@ -43,7 +43,7 @@ const langMap = {
 };
 
 module.exports = {
-  command: 'voicegpt',
+  command: ['voicegpt', 'siri', 'bixby', 'breeno', 'xiaoai', 'ella'],
   description: 'Chat with AI and get voice reply',
   react: 'mic',
 
