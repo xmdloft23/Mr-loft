@@ -1,432 +1,577 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>☭ 𝙻𝙾𝙵𝚃-𝚀𝚄𝙰𝙽𝚃𝚄𝙼-𝚅𝙸𝙸 ☭</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loft Core</title>
 
-  <!-- 🌸 Tailwind + Icons -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <!-- Icons & Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    /* 🌸 UNICORN QUANTUM ANIMATIONS */
-    @keyframes unicornGallop {
-      0%, 100% { transform: translateX(0) rotate(0deg); }
-      25% { transform: translateX(10px) rotate(5deg); }
-      50% { transform: translateX(20px) rotate(10deg); }
-      75% { transform: translateX(10px) rotate(5deg); }
+    :root {
+      --bg: #1a1a1a;
+      --card: #2d2d2d;
+      --border: #404040;
+      --text: #e0e0e0;
+      --accent: #00f7ff;
+      --accent-dark: #00b8c0;
+      --error: #ff3b5c;
+      --success: #00ff88;
+      --glass: rgba(255,255,255,.03);
+      --glass-border: rgba(255,255,255,.08);
     }
 
-    @keyframes unicornTwinkle {
-      0% { opacity: 0.1; transform: scale(0.5) rotate(0deg); }
-      25% { opacity: 0.8; transform: scale(1.2) rotate(90deg); }
-      50% { opacity: 1; transform: scale(1.5) rotate(180deg); }
-      75% { opacity: 0.8; transform: scale(1.2) rotate(270deg); }
-      100% { opacity: 0.1; transform: scale(0.5) rotate(360deg); }
-    }
-
-    @keyframes unicornHornSpin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes unicornMagicWave {
-      0% { box-shadow: 0 0 10px #ffd700; }
-      50% { box-shadow: 0 0 30px #ff69b4, 0 0 50px #ffd700; }
-      100% { box-shadow: 0 0 10px #ffd700; }
-    }
-
-    @keyframes unicornPulse {
-      0%, 100% { filter: brightness(1) hue-rotate(0deg); }
-      50% { filter: brightness(1.5) hue-rotate(120deg); }
-    }
-
-    /* 🌸 UNICORN BACKGROUND */
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      font-family: 'Orbitron', monospace;
-      overflow: hidden;
-      background: radial-gradient(ellipse at center, #1a0b2e 0%, #16213e 50%, #0f0f23 100%);
+      min-height:100vh;
+      background:var(--bg);
+      color:var(--text);
+      font-family:'Rajdhani',sans-serif;
+      overflow-x:hidden;
+      position:relative;
     }
 
-    /* 🌸 UNICORN VIDEO BACKGROUND - REMOVED RAIN */
-    video#bg-video {
-      position: fixed;
-      top: 0;
-      left: 0;
-      min-width: 100%;
-      min-height: 100%;
-      object-fit: cover;
-      z-index: -2;
-      filter: brightness(0.3) contrast(1.2) saturate(1.8);
+    /* === LOADING SCREEN === */
+    #loading {
+      position:fixed; inset:0;
+      background:var(--bg);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      z-index:9999; transition:opacity .8s ease-out;
+    }
+    #loading img {
+      width:120px; height:120px; border-radius:50%;
+      object-fit:cover; border:4px solid var(--accent);
+      margin-bottom:20px; box-shadow:0 0 30px rgba(0,247,255,.5);
+    }
+    #loading h2 {
+      font-family:'Orbitron',sans-serif; font-size:2rem;
+      background:linear-gradient(135deg,#fff,var(--accent));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      margin-bottom:12px;
+    }
+    #loading p { color:#aaa; font-size:1.1rem; max-width:400px; text-align:center; }
+    .loading-bar { width:300px; height:4px; background:rgba(255,255,255,.1); border-radius:2px; margin-top:30px; overflow:hidden; }
+    .loading-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-dark)); border-radius:2px; animation:load 3s ease-in-out forwards; }
+    @keyframes load { to { width:100%; } }
+
+    /* === MAIN CONTENT === */
+    #main-content { display:none; opacity:0; transition:opacity .6s; }
+
+    /* === BACKGROUND EFFECTS === */
+    .grid {
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(rgba(0,247,255,.03) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,247,255,.03) 1px,transparent 1px);
+      background-size:40px 40px; pointer-events:none; z-index:0;
+    }
+    .particles { position:absolute; inset:0; overflow:hidden; z-index:0; }
+    .particle {
+      position:absolute; background:var(--accent); border-radius:50%; opacity:0;
+      animation:float 12s infinite linear;
+    }
+    @keyframes float {
+      0%   { transform:translateY(100vh) scale(0); opacity:0; }
+      10%  { opacity:.6; }
+      90%  { opacity:.6; }
+      100% { transform:translateY(-10vh) scale(1); opacity:0; }
     }
 
-    /* 🌸 UNICORN STARS */
-    .unicorn-star {
-      position: absolute;
-      background: radial-gradient(circle, #ffd700 0%, #ff69b4 50%, transparent 70%);
-      border-radius: 50%;
-      animation: unicornTwinkle 3s infinite;
-      filter: drop-shadow(0 0 8px #ffd700);
-      pointer-events: none;
+    /* === LOGO === */
+    .logo-circle {
+      position:fixed; top:20px; right:20px; width:100px; height:100px;
+      border-radius:50%; background:var(--card); border:2px solid var(--glass-border);
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+      box-shadow:0 8px 25px rgba(0,0,0,.4); transition:all .3s; z-index:100;
+    }
+    .logo-circle:hover { transform:scale(1.07); border-color:var(--accent); box-shadow:0 0 20px rgba(0,247,255,.4); }
+    .logo-circle img { width:75%; height:75%; object-fit:contain; }
+
+    /* === CONTAINER === */
+    .container {
+      position:relative; z-index:1; max-width:900px; margin:0 auto;
+      padding:100px 20px 40px; display:flex; flex-direction:column;
+      align-items:center; gap:24px;
     }
 
-    /* 🌸 UNICORN SPARKLES */
-    .unicorn-sparkle {
-      position: absolute;
-      width: 3px;
-      height: 3px;
-      background: #ff69b4;
-      border-radius: 50%;
-      animation: unicornHornSpin 1.5s linear infinite;
-      box-shadow: 0 0 8px #ff69b4;
+    /* === HERO === */
+    .hero { text-align:center; }
+    .hero h1 {
+      font-family:'Orbitron',sans-serif; font-size:3rem; font-weight:700;
+      background:linear-gradient(135deg,#fff,var(--accent));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      margin-bottom:8px;
     }
+    .hero p { font-size:1.15rem; color:#bbb; }
 
-    /* 🌸 UNICORN NEON EFFECTS */
-    .unicorn-gradient {
-      background: linear-gradient(90deg, #ffd700, #ff69b4, #98fb98, #dda0dd);
-      background-size: 400% 400%;
-      -webkit-background-clip: text;
-      color: transparent;
-      animation: unicornPulse 4s ease-in-out infinite;
+    /* === AD BANNER === */
+    .ad-banner {
+      width:100%; background:var(--card); border-radius:16px; padding:18px;
+      display:flex; align-items:center; gap:16px; border:1px solid var(--glass-border);
+      box-shadow:0 8px 25px rgba(0,0,0,.3);
     }
-
-    .unicorn-neon {
-      text-shadow: 
-        0 0 5px #ffd700,
-        0 0 15px #ff69b4,
-        0 0 25px #ffd700,
-        0 0 40px #ff69b4;
-      animation: unicornMagicWave 2s ease-in-out infinite;
+    .ad-banner img { width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); }
+    .ad-text h3 { font-family:'Orbitron',sans-serif; margin-bottom:6px; font-size:1.3rem; }
+    .ad-text ul { margin:10px 0; color:#ccc; font-size:.95rem; }
+    .ad-text ul li { margin:4px 0; }
+    .cta-btn {
+      margin-left:auto; padding:11px 24px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      color:#000; font-weight:600; border:none; border-radius:8px;
+      cursor:pointer; transition:all .3s; position:relative; overflow:hidden; font-size:.95rem;
     }
-
-    .unicorn-border {
-      box-shadow: 
-        0 0 15px #ffd700,
-        0 0 30px #ff69b4,
-        inset 0 0 15px rgba(255,215,0,0.2);
-      animation: unicornMagicWave 3s ease-in-out infinite;
+    .cta-btn::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+      transform:translateX(-100%); transition:.6s;
     }
+    .cta-btn:hover::before { transform:translateX(100%); }
+    .cta-btn:hover { transform:translateY(-2px); box-shadow:0 0 20px rgba(0,247,255,.5); }
 
-    .unicorn-button {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 
-        0 0 15px #ff69b4,
-        0 0 25px #ffd700,
-        0 0 40px #ff69b4;
-      position: relative;
-      overflow: hidden;
+    /* === PAIR CARD === */
+    .pair-card {
+      width:100%; max-width:420px; background:var(--glass);
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      border-radius:16px; padding:28px; border:1px solid var(--glass-border);
+      box-shadow:0 12px 35px rgba(0,0,0,.4); text-align:center;
     }
-
-    .unicorn-button::before {
-      content: '';
-      position: absolute;
-      top: 0; left: -100%;
-      width: 100%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-      transition: left 0.5s;
+    .pair-card h2 { font-family:'Orbitron',sans-serif; color:var(--accent); margin-bottom:6px; font-size:1.4rem; }
+    .input-group {
+      display:flex; background:rgba(0,0,0,.25); border-radius:12px;
+      overflow:hidden; margin:18px 0; border:1px solid var(--glass-border);
     }
-
-    .unicorn-button:hover::before {
-      left: 100%;
+    .input-group input {
+      flex:1; padding:15px; background:transparent; border:none;
+      color:white; font-size:1rem; font-family:'Rajdhani',sans-serif;
     }
-
-    .unicorn-button:hover {
-      transform: scale(1.05) rotate(2deg);
-      box-shadow: 
-        0 0 25px #ff69b4,
-        0 0 50px #ffd700,
-        0 0 75px #ff69b4;
+    .input-group input::placeholder { color:#777; }
+    .input-group input:focus { outline:none; }
+    .input-group button {
+      padding:0 22px; background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      color:#000; border:none; font-weight:600; cursor:pointer; transition:.3s; font-size:.95rem;
     }
+    .input-group button:hover { filter:brightness(1.1); }
 
-    /* 🌸 UNICORN BOX */
-    .unicorn-box {
-      position: relative;
-      background: rgba(26, 11, 46, 0.85);
-      backdrop-filter: blur(25px);
-      overflow: hidden;
+    /* LOADER */
+    .loader { display:none; align-items:center; justify-content:center; gap:12px; color:var(--accent); font-family:'Orbitron',sans-serif; margin:18px 0; font-size:.95rem; }
+    .spinner { width:22px; height:22px; border:3px solid rgba(0,247,255,.2); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* RESULT */
+    .result { min-height:50px; display:flex; align-items:center; justify-content:center; }
+    .code-box {
+      background:rgba(0,0,0,.3); padding:12px 20px; border-radius:10px;
+      border:1px solid var(--glass-border); display:flex; align-items:center;
+      gap:10px; cursor:pointer; transition:.3s; font-family:'Orbitron',sans-serif; font-size:.95rem;
     }
+    .code-box:hover { background:rgba(0,0,0,.45); transform:translateY(-2px); box-shadow:0 0 15px rgba(0,247,255,.3); }
+    .code-box.pulse { animation:pulse 2s infinite; }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(0,247,255,.4);} 70%{box-shadow:0 0 0 12px transparent;} 100%{box-shadow:0 0 0 0 transparent;} }
+    .code-value { color:var(--accent); font-weight:700; }
 
-    .unicorn-box::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 1.5rem;
-      padding: 3px;
-      background: linear-gradient(45deg, #ffd700, #ff69b4, #98fb98, #dda0dd);
-      background-size: 400% 400%;
-      animation: unicornPulse 6s ease-in-out infinite;
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      z-index: -1;
+    /* === COMMENTS === */
+    .comments {
+      width:100%; max-width:600px; background:var(--card); border-radius:16px;
+      padding:22px; border:1px solid var(--glass-border);
     }
-
-    .unicorn-gallop { animation: unicornGallop 0.6s; }
-
-    /* 🌸 UNICORN INPUT */
-    .unicorn-input {
-      background: rgba(255,255,255,0.08);
-      border: 2px solid rgba(255,215,0,0.4);
-      backdrop-filter: blur(15px);
-      transition: all 0.3s ease;
-      position: relative;
+    .comments h3 { font-family:'Orbitron',sans-serif; margin-bottom:14px; text-align:center; font-size:1.3rem; }
+    .comment-form textarea {
+      width:100%; min-height:90px; padding:12px; background:rgba(0,0,0,.2);
+      border:1px solid var(--glass-border); border-radius:10px; color:white;
+      font-family:'Rajdhani',sans-serif; resize:vertical; margin-bottom:10px; font-size:.95rem;
     }
-
-    .unicorn-input:focus {
-      border-color: #ff69b4;
-      box-shadow: 0 0 25px rgba(255,105,180,0.5);
-      background: rgba(255,255,255,0.15);
-      transform: scale(1.02);
+    .char-count { text-align:right; font-size:.85rem; color:#888; margin-bottom:10px; }
+    .comment-form button {
+      padding:9px 22px; background:var(--accent); color:#000; border:none;
+      border-radius:8px; cursor:not-allowed; opacity:.5; transition:.3s; font-size:.9rem;
     }
+    .comment-form button.enabled { opacity:1; cursor:pointer; }
+    .comment-form button.enabled:hover { background:#00e0e6; }
 
-    /* 🌸 UNICORN LOADING */
-    .unicorn-loader {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255,215,0,0.3);
-      border-radius: 50%;
-      border-top-color: #ff69b4;
-      animation: unicornHornSpin 1s linear infinite;
+    .comment-list { margin-top:20px; display:flex; flex-direction:column; gap:14px; }
+    .comment {
+      display:flex; gap:12px; background:rgba(255,255,255,.03); padding:12px; border-radius:10px;
     }
+    .comment img { width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid var(--glass-border); }
+    .comment-body strong { display:block; margin-bottom:3px; font-size:.95rem; }
+    .comment-body p { font-size:.9rem; line-height:1.4; }
+    .comment-body small { color:#999; font-size:.8rem; }
 
-    /* 🌸 UNICORN RUN ANIMATION */
-    .unicorn-run {
-      position: absolute;
-      width: 40px;
-      height: 30px;
-      background: #ff69b4;
-      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-      animation: unicornGallop 2s ease-in-out infinite;
-      z-index: 5;
+    /* === STAR RATING === */
+    .rating { text-align:center; padding:24px 20px 16px; }
+    .rating h3 { font-family:'Orbitron',sans-serif; margin-bottom:12px; font-size:1.3rem; }
+    .stars { display:flex; justify-content:center; gap:8px; margin-bottom:10px; }
+    .stars a { color:#555; font-size:1.8rem; transition:.3s; }
+    .stars a:hover, .stars a.hovered { color:var(--accent); transform:scale(1.2); }
+    .github-link { color:var(--accent); text-decoration:none; font-weight:500; font-size:.95rem; }
+
+    /* === BUSINESS ADS === */
+    .business-ads { width:100%; max-width:900px; margin:30px auto 0; text-align:center; }
+    .business-ads h3 {
+      font-family:'Orbitron',sans-serif; font-size:1.5rem;
+      background:linear-gradient(135deg,#fff,var(--accent));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      margin-bottom:20px;
     }
-
-    .unicorn-run::before {
-      content: '';
-      position: absolute;
-      top: -5px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-bottom: 12px solid #ffd700;
+    .ads-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; padding:0 10px; }
+    .ad-card {
+      background:var(--glass); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      border-radius:16px; overflow:hidden; border:1px solid var(--glass-border);
+      box-shadow:0 8px 25px rgba(0,0,0,.3); transition:all .3s ease;
+      display:flex; flex-direction:column;
     }
+    .ad-card:hover {
+      transform:translateY(-6px); box-shadow:0 15px 35px rgba(0,247,255,.15);
+      border-color:var(--accent);
+    }
+    .ad-card img { width:100%; height:140px; object-fit:cover; border-bottom:2px solid var(--accent); }
+    .ad-content { padding:16px; text-align:left; flex-grow:1; display:flex; flex-direction:column; }
+    .ad-content h4 { font-family:'Orbitron',sans-serif; font-size:1.15rem; color:var(--accent); margin-bottom:6px; }
+    .ad-content p { font-size:.9rem; color:#ccc; line-height:1.5; flex-grow:1; margin-bottom:12px; }
+    .ad-cta {
+      align-self:flex-start; color:var(--accent); font-weight:600; font-size:.85rem;
+      text-decoration:none; display:flex; align-items:center; gap:6px; transition:.3s;
+    }
+    .ad-cta:hover { color:#fff; transform:translateX(4px); }
+    .ad-cta i { font-size:.8rem; transition:.3s; }
+    .ad-cta:hover i { transform:translateX(3px); }
 
-    .unicorn-run::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 10px;
-      width: 6px;
-      height: 12px;
-      background: #ffd700;
-      border-radius: 3px;
-      animation: unicornGallop 2s ease-in-out infinite reverse;
+    /* === FOOTER === */
+    footer { text-align:center; padding:30px 20px 40px; color:#777; font-size:.85rem; }
+    .social-links { display:flex; justify-content:center; gap:18px; margin-bottom:16px; }
+    .social-links a {
+      width:46px; height:46px; border-radius:50%; display:flex;
+      align-items:center; justify-content:center; font-size:1.3rem;
+      transition:.3s; color:white;
+    }
+    .social-links a:hover { transform:translateY(-4px); }
+    .social-links .youtube { background:#ff0000; }
+    .social-links .whatsapp { background:#25d366; }
+    .social-links .instagram { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+
+    /* RESPONSIVE */
+    @media (max-width:640px) {
+      .container { padding-top:80px; gap:20px; }
+      .hero h1 { font-size:2.3rem; }
+      .ad-banner { flex-direction:column; text-align:center; padding:16px; }
+      .cta-btn { margin:14px auto 0; }
+      .logo-circle { width:80px; height:80px; top:15px; right:15px; }
+      .ads-grid { grid-template-columns:1fr; }
+      .ad-card img { height:120px; }
     }
   </style>
 </head>
+<body>
 
-<body class="min-h-screen flex items-center justify-center bg-black overflow-hidden relative">
-  <!-- 🌸 UNICORN VIDEO BACKGROUND - NO RAIN -->
-  <video id="bg-video" autoplay muted loop playsinline>
-    <source src="https://files.catbox.moe/9fww2j.mp4" type="video/mp4">
-  </video>
-
-  <!-- 🌸 UNICORN STARFIELD -->
-  <div id="unicorn-stars" class="fixed inset-0 pointer-events-none z-0"></div>
-
-  <!-- 🌸 UNICORN SPARKLES -->
-  <div id="sparkles-container" class="fixed inset-0 pointer-events-none z-0"></div>
-
-  <!-- 🌸 UNICORN RUNNING ANIMATIONS -->
-  <div id="unicorn-runner" class="fixed bottom-10 left-0 pointer-events-none z-5"></div>
-
-  <!-- 🌸 MAIN UNICORN BOX -->
-  <div class="container mx-auto px-4 relative z-10">
-    <div class="max-w-md mx-auto p-8 unicorn-box rounded-3xl unicorn-border relative overflow-hidden">
-      <div class="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-500 rounded-3xl opacity-30 blur-xl animate-pulse"></div>
-
-      <div class="relative z-10 text-center">
-        <!-- 🌸 UNICORN ICON -->
-        <div class="flex justify-center mb-6 relative">
-          <i class="fas fa-magic text-7xl unicorn-gradient animate-pulse"></i>
-          <div class="unicorn-sparkle absolute -top-2 -right-2"></div>
-          <div class="unicorn-sparkle absolute -bottom-2 -left-2"></div>
-        </div>
-
-        <!-- 🌸 UNICORN TITLES -->
-        <h3 class="text-3xl font-black mb-3 unicorn-gradient unicorn-neon tracking-widest">
-          𝗠𝗜𝗡𝗜 𝗕𝗢𝗧
-        </h3>
-        <h4 class="text-2xl font-extrabold uppercase tracking-widest mb-6 unicorn-gradient">
-          ☭𝙻𝙾𝙵𝚃-𝚀𝚄𝙰𝙽𝚃𝚄𝙼-𝚅𝙸𝙸𝙸☭
-        </h4>
-
-        <!-- 🌸 UNICORN DIVIDER -->
-        <div class="flex items-center justify-center mb-8">
-          <div class="flex-grow border-t border-yellow-500 border-opacity-30"></div>
-          <span class="mx-3 text-yellow-300 text-xs tracking-widest font-bold">⟐ 𝚙𝚘𝚠𝚎𝚛𝚎𝚍 𝚋𝚢 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃 ⟐</span>
-          <div class="flex-grow border-t border-pink-500 border-opacity-30"></div>
-        </div>
-
-        <!-- 📱 UNICORN INPUT & BUTTON -->
-        <div class="space-y-4">
-          <input
-            id="number"
-            type="number"
-            placeholder="+255xxxxxxxxx"
-            class="unicorn-input w-full px-5 py-4 rounded-xl text-white placeholder-yellow-300 placeholder-opacity-60 focus:outline-none focus:ring-0 text-lg font-mono"
-          />
-          <button
-            id="submit"
-            class="unicorn-button w-full px-6 py-4 bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-600 rounded-xl text-white font-black uppercase tracking-widest text-lg"
-          >
-            ⟐ code ⟐
-          </button>
-        </div>
-
-        <!-- 💬 UNICORN STATUS -->
-        <div id="waiting-message" class="text-center unicorn-gradient text-xl hidden mt-6 flex items-center justify-center space-x-2">
-          <span class="unicorn-loader"></span>
-          <span>𝚂𝚙𝚛𝚎𝚊𝚍𝚒𝚗𝚐 𝙼𝚊𝚐𝚒𝚌𝚊𝚕 𝙳𝚞𝚜𝚝...</span>
-        </div>
-        <main id="pair" class="text-center mt-6"></main>
-      </div>
-    </div>
+  <!-- Loading Screen -->
+  <div id="loading">
+    <img src="https://thispersondoesnotexist.com/image" alt="Bot Avatar" onerror="this.src='https://o.uguu.se/AqzxDADm.jpg'">
+    <h2>Loft Core</h2>
+    <p>Connecting you to your personal Whatsapp bot. Please wait...</p>
+    <div class="loading-bar"><div class="loading-fill"></div></div>
   </div>
 
-  <!-- ⚙️ UNICORN SCRIPTS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+  <!-- Main Content -->
+  <div id="main-content">
+
+    <!-- Background Effects -->
+    <div class="grid"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Logo Circle -->
+    <div class="logo-circle">
+      <img src="https://o.uguu.se/AqzxDADm.jpg" alt="Logo">
+    </div>
+
+    <div class="container">
+
+      <!-- Hero -->
+      <section class="hero">
+        <h1>Loft Core</h1>
+        <p>Pair your WhatsApp number instantly and connect to your AI bot</p>
+      </section>
+
+      <!-- Ad Banner -->
+      <div class="ad-banner">
+        <img src="https://thispersondoesnotexist.com/image" alt="Bot Avatar" onerror="this.src='https://n.uguu.se/YgsVqpCU.jpg'">
+        <div class="ad-text">
+          <h3>Whatsapp FreeBot Pair Free</h3>
+          <ul>
+            <li>24/7 Auto Replies</li>
+            <li>Smart Conversations</li>
+            <li>Free Forever</li>
+          </ul>
+        </div>
+        <button class="cta-btn">Get Started</button>
+      </div>
+
+      <!-- Pairing Card -->
+      <div class="pair-card">
+        <h2>Enter Phone Number to Pair</h2>
+        <div class="input-group">
+          <input type="tel" id="phone" placeholder="+254712345678">
+          <button id="generate">Generate Code</button>
+        </div>
+
+        <div class="loader" id="loader">
+          <div class="spinner"></div>
+          <span>Generating secure code...</span>
+        </div>
+
+        <div class="result" id="result"></div>
+      </div>
+
+      <!-- Comments -->
+      <div class="comments">
+        <h3>Share Your Experience</h3>
+        <div class="comment-form">
+          <textarea id="commentText" placeholder="Write your message... (max 280 characters)" maxlength="280"></textarea>
+          <div class="char-count"><span id="charCount">0</span>/280</div>
+          <button id="sendComment" disabled>Send</button>
+        </div>
+
+        <div class="comment-list" id="commentList"></div>
+      </div>
+
+      <!-- Star Rating -->
+      <div class="rating">
+        <h3>Rate This Bot</h3>
+        <div class="stars">
+          <a href="#" class="star-link"><i class="fas fa-star"></i></a>
+          <a href="#" class="star-link"><i class="fas fa-star"></i></a>
+          <a href="#" class="star-link"><i class="fas fa-star"></i></a>
+          <a href="#" class="star-link"><i class="fas fa-star"></i></a>
+          <a href="#" class="star-link"><i class="fas fa-star"></i></a>
+        </div>
+        <p>Love it? <a href="https://github.com/Xmdloft23" target="_blank" class="github-link">Star & follow us on GitHub!</a></p>
+      </div>
+
+      <!-- Business Ads Section -->
+      <div class="business-ads">
+        <h3>Trusted by Businesses Worldwide</h3>
+        <div class="ads-grid">
+          <!-- Ad 1 -->
+          <div class="ad-card">
+            <img src="https://h.uguu.se/urBkBocj.jpg" onerror="this.src='https://i.pravatar.cc/300?img=11'" alt="E-commerce Store">
+            <div class="ad-content">
+              <h4>ShopFlow Pro</h4>
+              <p>Automated customer support & order tracking via WhatsApp. Boost sales 3x!</p>
+              <a href="#" class="ad-cta">Learn More <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Ad 2 -->
+          <div class="ad-card">
+            <img src="https://d.uguu.se/fzYsTcdi.jpg" onerror="this.src='https://i.pravatar.cc/300?img=22'" alt="Restaurant">
+            <div class="ad-content">
+              <h4>Mr Loft Hacker</h4>
+              <p>Create your own Whatsapp bot and Ai and Mr Loft</p>
+              <a href="#" class="ad-cta">See How <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Ad 3 -->
+          <div class="ad-card">
+            <img src="https://n.uguu.se/CCOBSfZf.jpg" onerror="this.src='https://i.pravatar.cc/300?img=33'" alt="Clinic">
+            <div class="ad-content">
+              <h4>Meet Developer</h4>
+              <p>Book appointments, send reminders & answer FAQs automatically.</p>
+              <a href="#" class="ad-cta">Book Demo <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Ad 4 -->
+          <div class="ad-card">
+            <img src="https://n.uguu.se/lBKTaZDc.jpg" onerror="this.src='https://i.pravatar.cc/300?img=44'" alt="Real Estate">
+            <div class="ad-content">
+              <h4>UrbanNest Realty</h4>
+              <p>Become a Quantum Family</p>
+              <a href="#" class="ad-cta">Get Started <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Ad 5 -->
+          <div class="ad-card">
+            <img src="https://o.uguu.se/EPjSaXiy.jpg" onerror="this.src='https://i.pravatar.cc/300?img=55'" alt="Gym">
+            <div class="ad-content">
+              <h4>Get Money With Tech</h4>
+              <p>Membership renewals, class bookings & motivation — all on WhatsApp.</p>
+              <a href="#" class="ad-cta">Join Now <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="social-links">
+        <a href="https://youtube.com/@loft_xmd" target="_blank" class="youtube"><i class="fab fa-youtube"></i></a>
+        <a href="https://wa.me/255778018545" target="_blank" class="whatsapp"><i class="fab fa-whatsapp"></i></a>
+        <a href="https://instagram.com/" target="_blank" class="instagram"><i class="fab fa-instagram"></i></a>
+      </div>
+      <p>© 2025 Powered by Mr Loft</p>
+    </footer>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js"></script>
   <script>
-    // 🌟 UNICORN STARFIELD
-    function createUnicornStars() {
-      const container = document.getElementById('unicorn-stars');
-      const starCount = 80;
-      for (let i = 0; i < starCount; i++) {
-        const star = document.createElement('div');
-        star.classList.add('unicorn-star');
-        const size = Math.random() * 3 + 1;
-        star.style.width = `${size}px`;
-        star.style.height = `${size}px`;
-        star.style.left = `${Math.random() * 100}%`;
-        star.style.top = `${Math.random() * 100}%`;
-        star.style.animationDelay = `${Math.random() * 6}s`;
-        star.style.animationDuration = `${Math.random() * 4 + 2}s`;
-        container.appendChild(star);
-      }
-    }
-
-    // ✨ UNICORN SPARKLES
-    function createSparkles() {
-      const container = document.getElementById('sparkles-container');
-      for (let i = 0; i < 20; i++) {
-        const sparkle = document.createElement('div');
-        sparkle.className = 'unicorn-sparkle';
-        sparkle.style.left = `${Math.random() * 100}%`;
-        sparkle.style.top = `${Math.random() * 100}%`;
-        sparkle.style.animationDuration = `${Math.random() * 3 + 1}s`;
-        sparkle.style.animationDelay = `${Math.random() * 2}s`;
-        container.appendChild(sparkle);
-      }
-    }
-
-    // 🦄 UNICORN RUNNER
-    function createUnicornRunner() {
-      const container = document.getElementById('unicorn-runner');
-      for (let i = 0; i < 3; i++) {
-        const unicorn = document.createElement('div');
-        unicorn.className = 'unicorn-run';
-        unicorn.style.left = `${i * 33}%`;
-        unicorn.style.animationDelay = `${i * 0.5}s`;
-        container.appendChild(unicorn);
-      }
-    }
-
-    // 🧬 ELEMENTS
-    const pairOutput = document.getElementById("pair");
-    const submitBtn = document.getElementById("submit");
-    const inputNum = document.getElementById("number");
-    const box = document.querySelector(".unicorn-box");
-    const waitingMessage = document.getElementById("waiting-message");
-
-    // 📋 UNICORN COPY FUNCTION
-    async function Copy() {
-      const obj = document.getElementById("copy");
-      const originalText = obj.innerText;
-      const code = originalText.replace('CODE: ', '');
-
-      await navigator.clipboard.writeText(code);
-      obj.innerHTML = `<i class="fas fa-check-circle mr-2"></i> 𝙲𝙾𝙿𝙸𝙴𝙳 ⟐`;
-      obj.classList.add('bg-green-600', 'bg-opacity-30', 'border-green-500');
-      obj.classList.remove('bg-opacity-10', 'border-opacity-20');
-
+    /* ==== LOADING SCREEN ==== */
+    window.addEventListener('load', () => {
       setTimeout(() => {
-        obj.innerHTML = originalText;
-        obj.classList.remove('bg-green-600', 'bg-opacity-30', 'border-green-500');
-        obj.classList.add('bg-opacity-10', 'border-opacity-20');
-      }, 2000);
+        document.getElementById('loading').style.opacity = '0';
+        setTimeout(() => {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('main-content').style.display = 'block';
+          setTimeout(() => document.getElementById('main-content').style.opacity = '1', 50);
+        }, 800);
+      }, 3000);
+    });
+
+    /* ==== PARTICLES ==== */
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 35; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = Math.random() * 6 + 2;
+        p.style.width = p.style.height = `${size}px`;
+        p.style.left = `${Math.random() * 100}%`;
+        p.style.animationDelay = `${Math.random() * 10}s`;
+        p.style.animationDuration = `${Math.random() * 8 + 8}s`;
+        container.appendChild(p);
+      }
+    }
+    createParticles();
+
+    /* ==== PAIRING LOGIC ==== */
+    const phoneInput = document.getElementById('phone');
+    const generateBtn = document.getElementById('generate');
+    const loader = document.getElementById('loader');
+    const resultDiv = document.getElementById('result');
+
+    async function copyCode() {
+      const text = document.getElementById('codeValue').innerText;
+      await navigator.clipboard.writeText(text);
+      const box = document.getElementById('codeBox');
+      const oldHTML = box.innerHTML;
+      box.innerHTML = `<i class="fas fa-check" style="color:#00ff88;"></i> COPIED!`;
+      setTimeout(() => box.innerHTML = oldHTML, 2000);
     }
 
-    // 🚀 UNICORN SUBMIT
-    submitBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      box.classList.add('unicorn-gallop');
-      setTimeout(() => box.classList.remove('unicorn-gallop'), 600);
-
-      const numVal = inputNum.value;
-      if (!numVal) {
-        pairOutput.innerHTML = `<div class="text-red-400 font-black mt-6 animate-pulse">⚠️ 𝙸𝙽𝙿𝚄𝚃 𝚈𝙾𝚄𝚁 𝙼𝙰𝙶𝙸𝙲𝙰𝙻 𝙸𝙳</div>`;
+    generateBtn.addEventListener('click', async () => {
+      let val = phoneInput.value.trim();
+      if (!val) {
+        resultDiv.innerHTML = `<div style="color:var(--error);background:rgba(255,59,92,.1);padding:12px;border-radius:10px;border:1px solid rgba(255,59,92,.3);font-size:.9rem">Enter phone number with country code</div>`;
         return;
       }
-      if (numVal.replace(/[^0-9]/g, "").length < 11) {
-        pairOutput.innerHTML = `<div class="text-red-400 font-black mt-6 animate-pulse">❌ 𝙸𝙽𝚅𝙰𝙻𝙸𝙳 𝙸𝙳</div>`;
+      const digits = val.replace(/[^0-9]/g, '');
+      if (digits.length < 11) {
+        resultDiv.innerHTML = `<div style="color:var(--error);background:rgba(255,59,92,.1);padding:12px;border-radius:10px;border:1px solid rgba(255,59,92,.3);font-size:.9rem">Invalid number</div>`;
         return;
       }
 
-      const cleanNum = numVal.replace(/[^0-9]/g, "");
-      inputNum.type = "text";
-      inputNum.value = "+" + cleanNum;
-      inputNum.classList.add('text-white', 'text-xl', 'font-mono');
-      waitingMessage.classList.remove('hidden');
-      pairOutput.innerHTML = '';
+      let formatted = '+';
+      for (let i = 0; i < digits.length; i++) {
+        if (i === 3 || i === 8) formatted += ' ';
+        formatted += digits[i];
+      }
+      phoneInput.value = formatted;
+
+      loader.style.display = 'flex';
+      resultDiv.innerHTML = '';
 
       try {
-        const { data } = await axios(`/code?number=${cleanNum}`);
-        const code = data.code || `U${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-        waitingMessage.classList.add('hidden');
-
-        pairOutput.innerHTML = `
-          <div class="mt-8">
-            <div class="text-6xl unicorn-gradient mb-4">⟐</div>
-            <div class="text-yellow-300 text-lg font-bold mb-4">𝙼𝙰𝙶𝙸𝙲𝙰𝙻 𝙴𝙽𝚃𝙰𝙽𝙶𝙻𝙴𝙼𝙴𝙽𝚃 𝙲𝙾𝙼𝙿𝙻𝙴𝚃𝙴</div>
-            <div id="copy" onclick="Copy()" class="inline-block px-8 py-4 bg-black bg-opacity-10 rounded-xl border border-white border-opacity-20 cursor-pointer hover:bg-opacity-25 transition-all duration-300 unicorn-border">
-              <span class="font-black text-white text-lg">𝙲𝙾𝙳𝙴: </span>
-              <span class="font-black unicorn-gradient text-2xl">${code}</span>
-            </div>
-            <div class="text-yellow-300 text-sm mt-3 font-mono">⟐ 𝙲𝙻𝙸𝙲𝙺 𝚃𝙾 𝙲𝙾𝙿𝚈 𝙲𝙾𝙳𝙴 ⟐</div>
-          </div>
-        `;
-      } catch {
-        waitingMessage.classList.add('hidden');
-        pairOutput.innerHTML = `<div class="text-red-400 font-black mt-6 animate-pulse">❌ 𝙻𝙾𝚂𝚃. 𝚁𝙴𝚃𝚁𝚈 ⟐</div>`;
+        const { data } = await axios(`/code?number=${digits}`);
+        const code = data.code || 'N/A';
+        loader.style.display = 'none';
+        resultDiv.innerHTML = `
+          <div class="code-box pulse" id="codeBox" onclick="copyCode()">
+            <i class="fas fa-copy" style="color:var(--accent);"></i>
+            <span>CODE:</span>
+            <span class="code-value" id="codeValue">${code}</span>
+          </div>`;
+      } catch (err) {
+        loader.style.display = 'none';
+        resultDiv.innerHTML = `<div style="color:var(--error);background:rgba(255,59,92,.1);padding:12px;border-radius:10px;border:1px solid rgba(255,59,92,.3);font-size:.9rem">Service unavailable</div>`;
       }
     });
 
-    // 🌟 INITIALIZE UNICORN EFFECTS
-    createUnicornStars();
-    createSparkles();
-    createUnicornRunner();
+    /* ==== COMMENT SYSTEM ==== */
+    const textarea = document.getElementById('commentText');
+    const charCount = document.getElementById('charCount');
+    const sendBtn = document.getElementById('sendComment');
+    const commentList = document.getElementById('commentList');
 
-    // 🎵 UNICORN INPUT FOCUS EFFECT
-    inputNum.addEventListener('focus', () => {
-      inputNum.parentElement.style.transform = 'scale(1.02)';
+    function loadComments() {
+      const saved = localStorage.getItem('freebot_comments');
+      if (saved) {
+        commentList.innerHTML = saved;
+      } else {
+        commentList.innerHTML = `
+          <div class="comment">
+            <img src="https://thispersondoesnotexist.com/image" onerror="this.src='https://i.pravatar.cc/40?img=1'" alt="User">
+            <div class="comment-body"><strong>John Doe</strong><p>Amazing bot! Works perfectly with my business.</p><small>2 hours ago</small></div>
+          </div>
+          <div class="comment">
+            <img src="https://thispersondoesnotexist.com/image" onerror="this.src='https://i.pravatar.cc/40?img=2'" alt="User">
+            <div class="comment-body"><strong>Jane Smith</strong><p>Super easy to set up. Highly recommend!</p><small>5 hours ago</small></div>
+          </div>`;
+      }
+    }
+    function saveComments() { localStorage.setItem('freebot_comments', commentList.innerHTML); }
+
+    textarea.addEventListener('input', () => {
+      const len = textarea.value.length;
+      charCount.textContent = len;
+      const valid = len > 0 && len <= 280;
+      sendBtn.classList.toggle('enabled', valid);
+      sendBtn.disabled = !valid;
     });
-    inputNum.addEventListener('blur', () => {
-      inputNum.parentElement.style.transform = 'scale(1)';
+
+    sendBtn.addEventListener('click', () => {
+      if (!sendBtn.classList.contains('enabled')) return;
+      const msg = textarea.value.trim();
+      if (!msg) return;
+
+      const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const avatar = `https://thispersondoesnotexist.com/image?${Date.now()}`;
+      const commentHTML = `
+        <div class="comment">
+          <img src="${avatar}" onerror="this.src='https://i.pravatar.cc/40?img=${Math.floor(Math.random()*70)}'" alt="You">
+          <div class="comment-body">
+            <strong>You</strong>
+            <p>${msg.replace(/\n/g, '<br>')}</p>
+            <small>Just now</small>
+          </div>
+        </div>`;
+      commentList.insertAdjacentHTML('afterbegin', commentHTML);
+      saveComments();
+
+      textarea.value = '';
+      charCount.textContent = '0';
+      sendBtn.classList.remove('enabled');
+      sendBtn.disabled = true;
+    });
+
+    loadComments();
+
+    /* ==== STAR HOVER ==== */
+    document.querySelectorAll('.star-link').forEach((star, i) => {
+      star.addEventListener('mouseenter', () => {
+        document.querySelectorAll('.star-link').forEach((s, j) => {
+          if (j <= i) s.classList.add('hovered');
+        });
+      });
+      star.addEventListener('mouseleave', () => {
+        document.querySelectorAll('.star-link').forEach(s => s.classList.remove('hovered'));
+      });
     });
   </script>
 </body>
