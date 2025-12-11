@@ -39,7 +39,7 @@ const config = {
     MAX_RETRIES: 3,
     GROUP_INVITE_LINK: 'https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt',
     ADMIN_LIST_PATH: './lib/admin.json',
-    RCD_IMAGE_PATH: 'https://files.catbox.moe/deeo6l.jpg',
+    RCD_IMAGE_PATH: 'https://files.catbox.moe/39alm1.jpeg',
     NEWSLETTER_JID: '120363422731708290@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
@@ -774,24 +774,28 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
         const devices = Object.keys(socket.user.devices || {}).length || 1;
 
                     await socket.sendMessage(userJid, {
-    image: { url: 'https://files.catbox.moe/deeo6l.jpg' },
+    image: { url: 'https://files.catbox.moe/39alm1.jpeg' },
     caption: `
-    *☭𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝☭*
+    *☭ 𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝 ☭*
 
-┏━━━━━━━━━━━━━━━━
-*┃☭ NAME :❯ 𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝I*
-*┃☭ VERSION :❯ 1.0.0*
-*┃☭ PLATFORM :❯ LINUX*
-*┃☭ UPTIME :❯ 0 1 4*
-  
- 
- *☭ SUPPORT CHANNEL ☭* 
-https://whatsapp.com/channel/0029VbBDVEEHLHQdjvSGpU1q 
- 
- *☭ SUPPORT GROUP ☭* 
- https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt┗━━━━━━━━━━━━━━━━
+┏━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ *☭ ɴᴀᴍᴇ:* 𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝
+┃ *☭ ᴠᴇʀsɪᴏɴ:* 1.0.0
+┃ *☭ ᴘʟᴀᴛғᴏʀᴍ:* Lɪɴᴜx
+┃ *☭ ᴜᴘᴛɪᴍᴇ:* 0 1 4
+┗━━━━━━━━━━━━━━━━━━━━━━━┛
 
-*☭ 𝚙𝚘𝚠𝚎𝚛𝚎𝚍 𝚋𝚢 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃 ☭*`
+*☭ sᴜᴘᴘᴏʀᴛ ᴄʜᴀɴɴᴇʟ:*  
+https://whatsapp.com/channel/0029Vb6B9xFCxoAseuG1g610
+
+*☭ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ:*  
+https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt
+
+┏━━━━━━━━━━━━━━━━━━━━━━━┓
+*⚠️ ᴡᴀɴᴛ ᴘʀᴇᴍɪᴜᴍ ᴠᴇʀsɪᴏɴ?*
+*☭ ᴄᴏɴᴛᴀᴄᴛ ᴅᴇᴠᴇʟᴏᴘᴇʀ:*  
+📞 ᴍᴇᴇᴛ ᴅᴇᴠᴇʟᴏᴘᴇʀ: *+255778018545*
+┗━━━━━━━━━━━━━━━━━━━━━━━┛`
 
                     });
 
