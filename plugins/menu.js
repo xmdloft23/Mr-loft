@@ -1,12 +1,12 @@
 const config = require('../config');
 
 /**
- * Menu Command - Displays interactive slide menu (sections)
+ * Menu Command - Displays a stylish command menu with a random image
  * Category: main
  */
 module.exports = {
   command: "menu",
-  description: "Displays interactive bot commands menu with sections",
+  description: "Displays bot commands menu with a random image.",
   react: "🌟",
   category: "main",
 
@@ -17,108 +17,101 @@ module.exports = {
     const pushname = msg.pushName || "User";
 
     try {
-      // You can keep random image if you want header image
+      // ────── RANDOM IMAGE POOL (High-quality, stable hosts) ──────
       const MENU_IMAGES = [
         'https://files.catbox.moe/pwqazx.jpg',
-        // add more quality images if you want
       ];
 
-      const randomImage = MENU_IMAGES[Math.floor(Math.random() * MENU_IMAGES.length)];
+      const getRandomImage = () => 
+        MENU_IMAGES[Math.floor(Math.random() * MENU_IMAGES.length)];
 
-      // ────── INTERACTIVE SECTIONS MENU ──────
-      const sections = [
-        {
-          title: "✨ General Commands",
-          rows: [
-            { title: "Alive", description: "Check if bot is online", rowId: `${config.PREFIX}alive` },
-            { title: "Ping", description: "Check bot response speed", rowId: `${config.PREFIX}ping` },
-            { title: "Uptime", description: "Bot running time", rowId: `${config.PREFIX}uptime` },
-            { title: "System", description: "Server information", rowId: `${config.PREFIX}system` },
-            { title: "Owner", description: "Contact owner", rowId: `${config.PREFIX}owner` },
-            { title: "Pairing Code", description: "Get pairing code", rowId: `${config.PREFIX}pair` }
-          ]
-        },
-        {
-          title: "📥 Download Commands",
-          rows: [
-            { title: "Song", description: "Download YouTube music", rowId: `${config.PREFIX}song` },
-            { title: "Video", description: "Download YouTube video", rowId: `${config.PREFIX}video` },
-            { title: "TikTok", description: "Download TikTok video", rowId: `${config.PREFIX}tiktok` },
-            { title: "Facebook", description: "Download FB video", rowId: `${config.PREFIX}facebook` },
-            { title: "APK", description: "Download Android app", rowId: `${config.PREFIX}apk` },
-            { title: "Image Search", description: "Google image search", rowId: `${config.PREFIX}img` }
-          ]
-        },
-        {
-          title: "👑 Owner Commands",
-          rows: [
-            { title: "Block User", rowId: `${config.PREFIX}block` },
-            { title: "Unblock User", rowId: `${config.PREFIX}unblock` },
-            { title: "Delete Message", rowId: `${config.PREFIX}delete` },
-            { title: "Leave Group", rowId: `${config.PREFIX}leave` },
-            { title: "View Once → Normal", rowId: `${config.PREFIX}vv` },
-            { title: "Join Group", rowId: `${config.PREFIX}join` }
-          ]
-        },
-        {
-          title: "🏠 Group Management",
-          rows: [
-            { title: "Join Group", rowId: `${config.PREFIX}join` },
-            { title: "Tag All", description: "Mention everyone", rowId: `${config.PREFIX}tagall` },
-            { title: "Promote", description: "Make admin", rowId: `${config.PREFIX}promote` },
-            { title: "Demote", description: "Remove admin", rowId: `${config.PREFIX}demote` },
-            { title: "Kick", description: "Remove member", rowId: `${config.PREFIX}kick` },
-            { title: "Mute Group", rowId: `${config.PREFIX}mute` },
-            { title: "Unmute Group", rowId: `${config.PREFIX}unmute` },
-            { title: "Change Group Name", rowId: `${config.PREFIX}gname` },
-            { title: "Change Group Description", rowId: `${config.PREFIX}gdesc` }
-          ]
-        }
-      ];
+      // ────── DYNAMIC MENU TEXT (Clean, Structured, Maintainable) ──────
+      const menuText = `
+╭━━━━━━━━━━━━━━━━━━━━━━━╮
+│   *𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝*   │
+╰━━━━━━━━━━━━━━━━━━━━━━━╯
+✦ *Bot Name:* 𝙻𝚘𝚏𝚝 𝚀𝚞𝚊𝚗𝚝𝚞𝚖
+✦ *Owner:* 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃
+✦ *Version:* 𝙻𝚊𝚝𝚎𝚜𝚝 𝚀𝚞𝚊𝚗𝚝𝚞𝚖
+✦ *Platform:* 𝚀𝚞𝚊𝚗𝚝𝚞𝚖 (𝙻𝚒𝚗𝚞𝚡 𝟸𝟸.𝟶𝟺)
+✦ *User:* ${pushname}
+✦ *Prefix:* \`${config.PREFIX}\`
+━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ *Welcome to Quantum Loft!* ✨
+💡 *Thanks for using our bot!*
 
-      const listMessage = {
-        text: `✨ *LOFT QUANTUM* ✨\n\n` +
-              `Hello *${pushname}* ツ\n` +
-              `You are using the most powerful bot 2025\n` +
-              `Prefix  →  \`${config.PREFIX}\`\n` +
-              `Select category you want to use...`,
+┏━━❮ *GENERAL COMMANDS* 
+┃ • ${config.PREFIX}alive
+┃ • ${config.PREFIX}uptime
+┃ • ${config.PREFIX}ping
+┃ • ${config.PREFIX}system
+┃ • ${config.PREFIX}owner
+┃ • ${config.PREFIX}pair
+┃ • ${config.PREFIX}menu
+┃ • ${config.PREFIX}grouplink
+┃ • ${config.PREFIX}autobio
+┗━━━━━━━━━━━━━━━━━━━━━
 
-        footer: "© 2025 Loft Quantum™ • Powered by Sir LOFT",
-        title: "「 LOFT QUANTUM MENU 」",
-        buttonText: "Click Here ↓",
-        sections: sections,
+┏━━❮ *DOWNLOAD COMMANDS* 
+┃ • ${config.PREFIX}song
+┃ • ${config.PREFIX}video
+┃ • ${config.PREFIX}tiktok
+┃ • ${config.PREFIX}facebook
+┃ • ${config.PREFIX}apk
+┃ • ${config.PREFIX}img
+┗━━━━━━━━━━━━━━━━━━━━━
+
+┏━━❮ *OWNER ONLY* ❯━━┓
+┃ • ${config.PREFIX}block
+┃ • ${config.PREFIX}unblock
+┃ • ${config.PREFIX}delete
+┃ • ${config.PREFIX}leave
+┃ • ${config.PREFIX}vv
+┃ • ${config.PREFIX}join
+┃ • ${config.PREFIX}jid
+┗━━━━━━━━━━━━━━━━━━━━
+
+┏━━❮ *GROUP COMMANDS* 
+┃ • ${config.PREFIX}join
+┃ • ${config.PREFIX}leave
+┃ • ${config.PREFIX}bc
+┃ • ${config.PREFIX}hidetag
+┃ • ${config.PREFIX}welcome
+┃ • ${config.PREFIX}mute
+┃ • ${config.PREFIX}unmute
+┃ • ${config.PREFIX}kick
+┃ • ${config.PREFIX}add
+┃ • ${config.PREFIX}tagall
+┃ • ${config.PREFIX}promote
+┃ • ${config.PREFIX}demote
+┃ • ${config.PREFIX}gname
+┃ • ${config.PREFIX}gdesc
+┗━━━━━━━━━━━━━━━━━━━━
+
+> ✨ *Powered by Sir LOFT* ✨
+> © 2026 ʟᴏꜰᴛ Qᴜᴀɴᴛᴜᴍ™
+`.trim();
+
+      // ────── SEND MENU WITH IMAGE ──────
+      await socket.sendMessage(from, {
+        image: { url: getRandomImage() },
+        caption: menuText,
         contextInfo: {
           mentionedJid: [sender],
           forwardingScore: 999,
           isForwarded: true,
           forwardedNewsletterMessageInfo: {
             newsletterJid: '120363422731708290@newsletter',
-            newsletterName: '𝙼𝚛 𝙻𝚘𝚏𝚝',
+            newsletterName: 'ʟᴏꜰᴛ Qᴜᴀɴᴛᴜᴍ™',
             serverMessageId: 143
           }
         }
-      };
-
-      // Optional: Send with header image
-      await socket.sendMessage(from, {
-        image: { url: randomImage },
-        caption: listMessage.text,
-        footer: listMessage.footer,
-        title: listMessage.title,
-        buttonText: listMessage.buttonText,
-        sections: listMessage.sections,
-        contextInfo: listMessage.contextInfo
       }, { quoted: msg });
 
-      // Alternative (no image header - cleaner):
-      /*
-      await socket.sendMessage(from, { list: listMessage }, { quoted: msg });
-      */
-
     } catch (error) {
-      console.error("❌ Menu Error:", error);
+      console.error("❌ Menu Command Error:", error);
       await socket.sendMessage(from, {
-        text: `❌ *Menu failed to load*\n${error.message ? '```' + error.message + '```' : ''}`
+        text: `❌ *Menu Error*\n\`\`\`${error.message}\`\`\``
       }, { quoted: msg });
     }
   }
