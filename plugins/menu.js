@@ -19,7 +19,7 @@ module.exports = {
     try {
       // ────── RANDOM IMAGE POOL (High-quality, stable hosts) ──────
       const MENU_IMAGES = [
-        'https://files.catbox.moe/pwqazx.jpg',
+        'https://files.catbox.moe/ursrow.png',
       ];
 
       const getRandomImage = () => 
@@ -28,9 +28,9 @@ module.exports = {
       // ────── DYNAMIC MENU TEXT (Clean, Structured, Maintainable) ──────
       const menuText = `
 ╭━━━━━━━━━━━━━━━━━━━━━━━╮
-│   *𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝*   │
+│   *ʟᴏꜰᴛ ᴋɴɪɢʜᴛ* ㋛ ꜰʀᴇᴇ ʙᴏᴛ │
 ╰━━━━━━━━━━━━━━━━━━━━━━━╯
-✦ *Bot Name:* 𝙻𝚘𝚏𝚝 𝚀𝚞𝚊𝚗𝚝𝚞𝚖
+✦ *Bot Name:* ʟᴏꜰᴛ ᴋɴɪɢʜᴛ
 ✦ *Owner:* 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃
 ✦ *Version:* 𝙻𝚊𝚝𝚎𝚜𝚝 𝚀𝚞𝚊𝚗𝚝𝚞𝚖
 ✦ *Platform:* 𝚀𝚞𝚊𝚗𝚝𝚞𝚖 (𝙻𝚒𝚗𝚞𝚡 𝟸𝟸.𝟶𝟺)
