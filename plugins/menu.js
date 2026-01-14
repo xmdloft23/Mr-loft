@@ -7,7 +7,7 @@ const config = require('../config');
 module.exports = {
   command: "menu",
   description: "Displays bot commands menu with a random image.",
-  react: "🌟",
+  react: "smile",
   category: "main",
 
   execute: async (socket, msg, args, number) => {
