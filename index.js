@@ -39,7 +39,7 @@ const config = {
     MAX_RETRIES: 3,
     GROUP_INVITE_LINK: 'https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt',
     ADMIN_LIST_PATH: './lib/admin.json',
-    RCD_IMAGE_PATH: 'https://files.catbox.moe/39alm1.jpeg',
+    RCD_IMAGE_PATH: 'https://files.catbox.moe/ursrow.png',
     NEWSLETTER_JID: '120363422731708290@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
@@ -774,14 +774,14 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
         const devices = Object.keys(socket.user.devices || {}).length || 1;
 
                     await socket.sendMessage(userJid, {
-    image: { url: 'https://files.catbox.moe/39alm1.jpeg' },
+    image: { url: 'https://files.catbox.moe/ursrow.png' },
     caption: `
     *☭ 𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝 ☭*
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ *☭ ɴᴀᴍᴇ:* 𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝
+┃ *☭ ɴᴀᴍᴇ:* ʟᴏꜰᴛ ᴋɴɪɢʜᴛ
 ┃ *☭ ᴠᴇʀsɪᴏɴ:* 1.0.0
-┃ *☭ ᴘʟᴀᴛғᴏʀᴍ:* Lɪɴᴜx
+┃ *☭ ᴘʟᴀᴛғᴏʀᴍ:* Qᴜᴀɴᴛᴜᴍ
 ┃ *☭ ᴜᴘᴛɪᴍᴇ:* 0 1 4
 ┗━━━━━━━━━━━━━━━━━━━━━━━┛
 
