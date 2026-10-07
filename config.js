@@ -37,9 +37,8 @@ module.exports = {
 
     // ✅ Za mpya (array ya channel nyingi)
     NEWSLETTERS: [
-        { jid: '120363398106360290@newsletter', messageId: '428' },
+        { jid: '1120363412381743329@newsletter', messageId: '428' },
         { jid: '120363424095366093@newsletter', messageId: '143' },
-        { jid: '120363412381743329@newsletter', messageId: '454' },
     ],
 
     OTP_EXPIRY: 300000,
