@@ -1,118 +1,77 @@
+// commands/main/menucat.js
+'use strict';
+
 const config = require('../config');
 
-/**
- * Menu Command - Displays a stylish command menu with a random image
- * Category: main
- */
 module.exports = {
-  command: "menu",
-  description: "Displays bot commands menu with a random image.",
-  react: "smile",
-  category: "main",
+    name: "menu",
+    command: "menucat",
+    aliases: ["mc", "catmenu"],
+    description: "Shows commands of a selected category.",
+    react: "📂",
+    category: "main",
 
-  execute: async (socket, msg, args, number) => {
-    const { key } = msg;
-    const from = key.remoteJid;
-    const sender = key.participant || from;
-    const pushname = msg.pushName || "User";
+    execute: async (socket, msg, args, number) => {
+        const from = msg.key.remoteJid;
+        const category = (args[0] || '').toLowerCase();
 
-    try {
-      // ────── RANDOM IMAGE POOL (High-quality, stable hosts) ──────
-      const MENU_IMAGES = [
-        'https://files.catbox.moe/ursrow.png',
-      ];
+        const categories = {
+            general: {
+                title: '🌟 GENERAL COMMANDS',
+                commands: ['alive', 'uptime', 'ping', 'system', 'owner', 'pair', 'menu', 'grouplink', 'autobio']
+            },
+            download: {
+                title: '📥 DOWNLOAD COMMANDS',
+                commands: ['song', 'video', 'tiktok', 'facebook', 'apk', 'img']
+            },
+            group: {
+                title: '👥 GROUP COMMANDS',
+                commands: ['join', 'leave', 'bc', 'hidetag', 'welcome', 'mute', 'unmute', 'kick', 'add', 'tagall', 'promote', 'demote', 'gname', 'gdesc']
+            },
+            owner: {
+                title: '🔒 OWNER COMMANDS',
+                commands: ['block', 'unblock', 'delete', 'leave', 'vv', 'join', 'jid']
+            },
+            ai: {
+                title: '🤖 AI COMMANDS',
+                commands: ['loft', 'gpt', 'gemini', 'imagine']
+            },
+            tools: {
+                title: '🛠️ TOOLS COMMANDS',
+                commands: ['sticker', 'toimg', 'tts', 'translate']
+            }
+        };
 
-      const getRandomImage = () => 
-        MENU_IMAGES[Math.floor(Math.random() * MENU_IMAGES.length)];
+        if (!category || !categories[category]) {
+            return await socket.sendMessage(from, {
+                text: `❌ *Category haipo!*\n\nChagua moja ya hizi:\n${Object.keys(categories).map(c => `• ${config.PREFIX}menucat ${c}`).join('\n')}`
+            }, { quoted: msg });
+        }
 
-      // ────── DYNAMIC MENU TEXT (Clean, Structured, Maintainable) ──────
-      const menuText = `
-╭━━━━━━━━━━━━━━━━━━━━━━━╮
-│   *ʟᴏꜰᴛ ᴋɴɪɢʜᴛ* ㋛ ꜰʀᴇᴇ ʙᴏᴛ │
-╰━━━━━━━━━━━━━━━━━━━━━━━╯
-✦ *Bot Name:* ʟᴏꜰᴛ ᴋɴɪɢʜᴛ
-✦ *Owner:* 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃
-✦ *Version:* 𝙻𝚊𝚝𝚎𝚜𝚝 𝚀𝚞𝚊𝚗𝚝𝚞𝚖
-✦ *Platform:* 𝚀𝚞𝚊𝚗𝚝𝚞𝚖 (𝙻𝚒𝚗𝚞𝚡 𝟸𝟸.𝟶𝟺)
-✦ *User:* ${pushname}
-✦ *Prefix:* \`${config.PREFIX}\`
-━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ *Welcome to Quantum Loft!* ✨
-💡 *Thanks for using our bot!*
+        const data = categories[category];
+        const list = data.commands.map(cmd => `┃ • ${config.PREFIX}${cmd}`).join('\n');
 
-┏━━❮ *GENERAL COMMANDS* 
-┃ • ${config.PREFIX}alive
-┃ • ${config.PREFIX}uptime
-┃ • ${config.PREFIX}ping
-┃ • ${config.PREFIX}system
-┃ • ${config.PREFIX}owner
-┃ • ${config.PREFIX}pair
-┃ • ${config.PREFIX}menu
-┃ • ${config.PREFIX}grouplink
-┃ • ${config.PREFIX}autobio
-┗━━━━━━━━━━━━━━━━━━━━━
+        const text = `
+┏━━❮ *${data.title}* ❯━━┓
+${list}
+┗━━━━━━━━━━━━━━━━━━━━━━━┛
 
-┏━━❮ *DOWNLOAD COMMANDS* 
-┃ • ${config.PREFIX}song
-┃ • ${config.PREFIX}video
-┃ • ${config.PREFIX}tiktok
-┃ • ${config.PREFIX}facebook
-┃ • ${config.PREFIX}apk
-┃ • ${config.PREFIX}img
-┗━━━━━━━━━━━━━━━━━━━━━
-
-┏━━❮ *OWNER ONLY* ❯━━┓
-┃ • ${config.PREFIX}block
-┃ • ${config.PREFIX}unblock
-┃ • ${config.PREFIX}delete
-┃ • ${config.PREFIX}leave
-┃ • ${config.PREFIX}vv
-┃ • ${config.PREFIX}join
-┃ • ${config.PREFIX}jid
-┗━━━━━━━━━━━━━━━━━━━━
-
-┏━━❮ *GROUP COMMANDS* 
-┃ • ${config.PREFIX}join
-┃ • ${config.PREFIX}leave
-┃ • ${config.PREFIX}bc
-┃ • ${config.PREFIX}hidetag
-┃ • ${config.PREFIX}welcome
-┃ • ${config.PREFIX}mute
-┃ • ${config.PREFIX}unmute
-┃ • ${config.PREFIX}kick
-┃ • ${config.PREFIX}add
-┃ • ${config.PREFIX}tagall
-┃ • ${config.PREFIX}promote
-┃ • ${config.PREFIX}demote
-┃ • ${config.PREFIX}gname
-┃ • ${config.PREFIX}gdesc
-┗━━━━━━━━━━━━━━━━━━━━
-
-> ✨ *Powered by Sir LOFT* ✨
-> © 2026 ʟᴏꜰᴛ Qᴜᴀɴᴛᴜᴍ™
+> ℹ️ *Return To Main Menu:* ${config.PREFIX}menu
 `.trim();
 
-      // ────── SEND MENU WITH IMAGE ──────
-      await socket.sendMessage(from, {
-        image: { url: getRandomImage() },
-        caption: menuText,
-        contextInfo: {
-          mentionedJid: [sender],
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363422731708290@newsletter',
-            newsletterName: 'ʟᴏꜰᴛ Qᴜᴀɴᴛᴜᴍ™',
-            serverMessageId: 143
-          }
-        }
-      }, { quoted: msg });
-
-    } catch (error) {
-      console.error("❌ Menu Command Error:", error);
-      await socket.sendMessage(from, {
-        text: `❌ *Menu Error*\n\`\`\`${error.message}\`\`\``
-      }, { quoted: msg });
+        await socket.sendMessage(from, {
+            text,
+            contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363424095366093@newsletter',
+                    newsletterName: '𝙻𝚘𝚏𝚝 𝚇𝚖𝚍',
+                    serverMessageId: 143
+                },
+                // ✅ Thumbnail imeongezwa hapa
+                thumbnail: { url: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg' }
+            }
+        }, { quoted: msg });
     }
-  }
 };
