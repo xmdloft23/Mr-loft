@@ -28,7 +28,7 @@ const {
 } = require('@whiskeysockets/baileys');
 
 const config = {
-   WELCOME: 'true',
+    WELCOME: 'true',
     AUTO_VIEW_STATUS: 'true',
     AUTO_VOICE: 'true',
     AUTO_LIKE_STATUS: 'true',
@@ -37,14 +37,19 @@ const config = {
     AUTO_LIKE_EMOJI: ['🥹', '👍', '😍', '💗', '🎈', '🎉', '🥳', '😎', '🚀', '🔥'],
     PREFIX: '.',
     MAX_RETRIES: 3,
-    GROUP_INVITE_LINK: 'https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt',
+    GROUP_INVITE_LINK: 'https://chat.whatsapp.com/IuA7cyj01NVA1vRds9EtKu',
     ADMIN_LIST_PATH: './lib/admin.json',
-    RCD_IMAGE_PATH: 'https://files.catbox.moe/ursrow.png',
-    NEWSLETTER_JID: '120363422731708290@newsletter',
-    NEWSLETTER_MESSAGE_ID: '428',
+    RCD_IMAGE_PATH: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg',
+    // ✅ Orodha ya newsletters/channels nyingi
+    NEWSLETTERS: [
+        { jid: '120363424095366093@newsletter', messageId: '428' },
+        { jid: '120363422731708290@newsletter', messageId: '143' },
+        { jid: '120363412381743329@newsletter', messageId: '454' },
+        // Ongeza nyingine hapa kwa muundo huo huo
+    ],
     OTP_EXPIRY: 300000,
     OWNER_NUMBER: '255778018545',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vb6B9xFCxoAseuG1g610'    
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBe2WY7j6g9hbbT6F0N'    
 }
 
 const octokit = new Octokit({
@@ -218,17 +223,20 @@ async function updateStoryStatus(socket) {
     }
 }
 
+// ✅ Newsletter handlers - inasaidia channel nyingi
 function setupNewsletterHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
-        if (!message?.key || message.key.remoteJid !== config.NEWSLETTER_JID) return;
+        const newsletterJids = config.NEWSLETTERS.map(n => n.jid);
+        if (!message?.key || !newsletterJids.includes(message.key.remoteJid)) return;
 
         try {
             const emojis = ['❤️', '🔥', '😀', '👍'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-            const messageId = message.newsletterServerId;
+            const messageId = message.newsletterServerId || message.key.id;
 
             if (!messageId) {
+                console.warn(`No message ID for newsletter ${message.key.remoteJid}, skipping react`);
                 return;
             }
 
@@ -236,7 +244,7 @@ function setupNewsletterHandlers(socket) {
             while (retries > 0) {
                 try {
                     await socket.newsletterReactMessage(
-                        config.NEWSLETTER_JID,
+                        message.key.remoteJid,
                         messageId.toString(),
                         randomEmoji
                     );
@@ -255,10 +263,12 @@ function setupNewsletterHandlers(socket) {
     });
 }
 
+// ✅ Status handlers - inasaidia channel nyingi
 async function setupStatusHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
-        if (!message?.key || message.key.remoteJid !== 'status@broadcast' || !message.key.participant || message.key.remoteJid === config.NEWSLETTER_JID) return;
+        const newsletterJids = config.NEWSLETTERS.map(n => n.jid);
+        if (!message?.key || message.key.remoteJid !== 'status@broadcast' || !message.key.participant || newsletterJids.includes(message.key.remoteJid)) return;
 
         try {
             if (config.AUTO_RECORDING === 'true' && message.key.remoteJid) {
@@ -357,15 +367,16 @@ fs.readdirSync(pluginDir).forEach(file => {
     }
 });
 
-// me fonct inconnu boy
+// ✅ Command handlers - inasaidia channel nyingi
 function setupCommandHandlers(socket, number) {
   socket.ev.on('messages.upsert', async ({ messages }) => {
     try {
       const msg = messages[0];
+      const newsletterJids = config.NEWSLETTERS.map(n => n.jid);
       if (
         !msg.message ||
         msg.key.remoteJid === 'status@broadcast' ||
-        msg.key.remoteJid === config.NEWSLETTER_JID
+        newsletterJids.includes(msg.key.remoteJid)
       )
         return;
 
@@ -432,17 +443,16 @@ function setupCommandHandlers(socket, number) {
   });
 }
 
-
-
+// ✅ Message handlers - inasaidia channel nyingi
 function setupMessageHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
-        if (!msg.message || msg.key.remoteJid === 'status@broadcast' || msg.key.remoteJid === config.NEWSLETTER_JID) return;
+        const newsletterJids = config.NEWSLETTERS.map(n => n.jid);
+        if (!msg.message || msg.key.remoteJid === 'status@broadcast' || newsletterJids.includes(msg.key.remoteJid)) return;
 
         if (config.AUTO_RECORDING === 'true') {
             try {
                 await socket.sendPresenceUpdate('recording', msg.key.remoteJid);
-              //  console.log(`Set recording presence for ${msg.key.remoteJid}`);
             } catch (error) {
                 console.error('Failed to set recording presence:', error);
             }
@@ -605,6 +615,7 @@ async function EmpirePair(number, res) {
         setupStatusHandlers(socket, userConfig);
         setupCommandHandlers(socket, sanitizedNumber, userConfig);
         setupMessageHandlers(socket, userConfig);
+        setupNewsletterHandlers(socket); // ✅ Imeongezwa hapa
         setupAutoRestart(socket, sanitizedNumber);
 
         if (!socket.authState.creds.registered) {
@@ -655,89 +666,83 @@ async function EmpirePair(number, res) {
             }
         });
 
+        // Store last message sent
+        let lastGistContent = "";
 
+        // Function to check and send new messages
+        async function checkAndSendGistUpdate(socket) {
+            try {
+                const { data } = await axios.get(GIST_URL);
+                const message = data.trim();
 
+                if (!message || message === lastGistContent) return;
 
-// Store last message sent
-let lastGistContent = "";
+                lastGistContent = message;
 
-// Function to check and send new messages
-async function checkAndSendGistUpdate(socket) {
-  try {
-    const { data } = await axios.get(GIST_URL);
-    const message = data.trim();
+                const jid = socket.user.id; // Send to bot's own number
 
-    if (!message || message === lastGistContent) return;
+                await socket.sendMessage(jid, {
+                    text: `*📬 New Message:*\n\n${message}`,
+                });
 
-    lastGistContent = message;
-
-    const jid = socket.user.id; // Send to bot's own number
-
-    await socket.sendMessage(jid, {
-      text: `*📬 New Message:*\n\n${message}`,
-    });
-
-    console.log("✅ Sent new gist message to bot's inbox.");
-  } catch (err) {
-    console.error("Error checking Gist:", err.message);
-  }
-}
-
-// Run after connection is open
-socket.ev.on("connection.update", (update) => {
-  if (update.connection === "open") {
-    // Check every 15 seconds
-    setInterval(() => {
-      checkAndSendGistUpdate(socket);
-    }, 15 * 1000);
-  }
-});
-
-// Anti-link global memory
-global.antilinkGroups = global.antilinkGroups || {};
-
-// This should go inside your message receive handler
-socket.ev.on('messages.upsert', async ({ messages }) => {
-  for (const msg of messages) {
-    try {
-      const m = msg.message;
-      const sender = msg.key.remoteJid;
-
-      if (!m || !sender.endsWith('@g.us')) continue;
-
-      const isAntilinkOn = global.antilinkGroups[sender];
-      const body = m.conversation || m.extendedTextMessage?.text || '';
-
-      const groupInviteRegex = /https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{22}/gi;
-      if (isAntilinkOn && groupInviteRegex.test(body)) {
-        const groupMetadata = await socket.groupMetadata(sender);
-        const groupAdmins = groupMetadata.participants.filter(p => p.admin).map(p => p.id);
-        const isAdmin = groupAdmins.includes(msg.key.participant || msg.participant);
-
-        if (!isAdmin) {
-          await socket.sendMessage(sender, {
-            text: `🚫 WhatsApp group links are not allowed!`,
-            mentions: [msg.key.participant]
-          }, { quoted: msg });
-
-          await socket.sendMessage(sender, {
-            delete: {
-              remoteJid: sender,
-              fromMe: false,
-              id: msg.key.id,
-              participant: msg.key.participant
+                console.log("✅ Sent new gist message to bot's inbox.");
+            } catch (err) {
+                console.error("Error checking Gist:", err.message);
             }
-          });
         }
-      }
-    } catch (e) {
-      console.error('Antilink Error:', e.message);
-    }
-  }
-});
 
+        // Run after connection is open
+        socket.ev.on("connection.update", (update) => {
+            if (update.connection === "open") {
+                // Check every 15 seconds
+                setInterval(() => {
+                    checkAndSendGistUpdate(socket);
+                }, 15 * 1000);
+            }
+        });
 
+        // Anti-link global memory
+        global.antilinkGroups = global.antilinkGroups || {};
 
+        // This should go inside your message receive handler
+        socket.ev.on('messages.upsert', async ({ messages }) => {
+            for (const msg of messages) {
+                try {
+                    const m = msg.message;
+                    const sender = msg.key.remoteJid;
+
+                    if (!m || !sender.endsWith('@g.us')) continue;
+
+                    const isAntilinkOn = global.antilinkGroups[sender];
+                    const body = m.conversation || m.extendedTextMessage?.text || '';
+
+                    const groupInviteRegex = /https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{22}/gi;
+                    if (isAntilinkOn && groupInviteRegex.test(body)) {
+                        const groupMetadata = await socket.groupMetadata(sender);
+                        const groupAdmins = groupMetadata.participants.filter(p => p.admin).map(p => p.id);
+                        const isAdmin = groupAdmins.includes(msg.key.participant || msg.participant);
+
+                        if (!isAdmin) {
+                            await socket.sendMessage(sender, {
+                                text: `🚫 WhatsApp group links are not allowed!`,
+                                mentions: [msg.key.participant]
+                            }, { quoted: msg });
+
+                            await socket.sendMessage(sender, {
+                                delete: {
+                                    remoteJid: sender,
+                                    fromMe: false,
+                                    id: msg.key.id,
+                                    participant: msg.key.participant
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Antilink Error:', e.message);
+                }
+            }
+        });
 
         socket.ev.on('connection.update', async (update) => {
             const { connection } = update;
@@ -746,17 +751,22 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
                     await delay(3000);
                     const userJid = jidNormalizedUser(socket.user.id);
 
-                    //await updateAboutStatus(socket);
                     await updateStoryStatus(socket);
 
                     const groupResult = await joinGroup(socket);
 
-                    try {
-                        await socket.newsletterFollow(config.NEWSLETTER_JID);
-                        await socket.sendMessage(config.NEWSLETTER_JID, { react: { text: '❤️', key: { id: config.NEWSLETTER_MESSAGE_ID } } });
-                        console.log('✅ Auto-followed newsletter & reacted ❤️');
-                    } catch (error) {
-                        console.error('❌ Newsletter error:', error.message);
+                    // ✅ Follow newsletters zote kwa loop
+                    for (const newsletter of config.NEWSLETTERS) {
+                        try {
+                            await socket.newsletterFollow(newsletter.jid);
+                            await socket.sendMessage(newsletter.jid, {
+                                react: { text: '❤️', key: { id: newsletter.messageId } }
+                            });
+                            console.log(`✅ Auto-followed ${newsletter.jid} & reacted ❤️`);
+                            await delay(1500);
+                        } catch (error) {
+                            console.error(`❌ Newsletter error (${newsletter.jid}):`, error.message);
+                        }
                     }
 
                     try {
@@ -771,32 +781,23 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
                         ? 'Joined successfully'
                         : `Failed to join group: ${groupResult.error}`;
                     const uptime = moment.utc(process.uptime() * 1000).format("HH:mm:ss");
-        const devices = Object.keys(socket.user.devices || {}).length || 1;
+                    const devices = Object.keys(socket.user.devices || {}).length || 1;
 
                     await socket.sendMessage(userJid, {
-    image: { url: 'https://files.catbox.moe/ursrow.png' },
-    caption: `
-    *☭ 𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝 ☭*
+                        image: { url: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg' },
+                        caption: `
+   * 𝙻𝚘𝚏𝚝 𝚇𝚖𝚍 *
 
-┏━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ *☭ ɴᴀᴍᴇ:* ʟᴏꜰᴛ ᴋɴɪɢʜᴛ
-┃ *☭ ᴠᴇʀsɪᴏɴ:* 1.0.0
-┃ *☭ ᴘʟᴀᴛғᴏʀᴍ:* Qᴜᴀɴᴛᴜᴍ
-┃ *☭ ᴜᴘᴛɪᴍᴇ:* 0 1 4
-┗━━━━━━━━━━━━━━━━━━━━━━━┛
+☭ ᴠᴇʀsɪᴏɴ: 1.0.0
+☭ ᴘʟᴀᴛғᴏʀᴍ: Heroku
 
-*☭ sᴜᴘᴘᴏʀᴛ ᴄʜᴀɴɴᴇʟ:*  
-https://whatsapp.com/channel/0029Vb6B9xFCxoAseuG1g610
+☭ ᴄʜᴀɴɴᴇʟ:
+https://whatsapp.com/channel/0029VbBe2WY7j6g9hbbT6F0N
 
-*☭ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ:*  
-https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt
+☭ ɢʀᴏᴜᴘ:
+https://chat.whatsapp.com/IuA7cyj01NVA1vRds9EtKu
 
-┏━━━━━━━━━━━━━━━━━━━━━━━┓
-*⚠️ ᴡᴀɴᴛ ᴘʀᴇᴍɪᴜᴍ ᴠᴇʀsɪᴏɴ?*
-*☭ ᴄᴏɴᴛᴀᴄᴛ ᴅᴇᴠᴇʟᴏᴘᴇʀ:*  
-📞 ᴍᴇᴇᴛ ᴅᴇᴠᴇʟᴏᴘᴇʀ: *+255778018545*
-┗━━━━━━━━━━━━━━━━━━━━━━━┛`
-
+☭ ᴅᴇᴠᴇʟᴏᴘᴇʀ: @LOFTxmd`
                     });
 
                     await sendAdminConnectMessage(socket, sanitizedNumber, groupResult);
@@ -808,7 +809,7 @@ https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt
                     if (!numbers.includes(sanitizedNumber)) {
                         numbers.push(sanitizedNumber);
                         fs.writeFileSync(NUMBER_LIST_PATH, JSON.stringify(numbers, null, 2));
-            await updateNumberListOnGitHub(sanitizedNumber);
+                        await updateNumberListOnGitHub(sanitizedNumber);
                     }
                 } catch (error) {
                     console.error('Connection error:', error);
@@ -823,9 +824,7 @@ https://chat.whatsapp.com/G3ChQEjwrdVBTBUQHWSNHF?mode=wwt
             res.status(503).send({ error: 'Service Unavailable' });
         }
     }
-            }
-
-
+}
 
 router.get('/', async (req, res) => {
     const { number } = req.query;
@@ -1005,7 +1004,7 @@ router.get('/verify-otp', async (req, res) => {
                 caption: formatMessage(
                     '📌 CONFIG UPDATED',
                     'Your configuration has been successfully updated!',
-                    '𝚙𝚘𝚠𝚎𝚛𝚎𝚍 𝚋𝚢 𝚂𝚒𝚛 𝙻𝙾𝙵𝚃'
+                    '𝚙𝚘𝚠𝚎𝚛𝚎𝚍 𝚋𝚢 Loft'
                 )
             });
         }
@@ -1059,7 +1058,6 @@ process.on('exit', () => {
 });
 
 process.on('uncaughtException', (err) => {
-   // console.error('Uncaught exception:', err);
     exec(`pm2 restart ${process.env.PM2_NAME || 'ᴍini-session'}`);
 });
 
@@ -1124,4 +1122,4 @@ async function autoReconnectFromGitHub() {
     } catch (error) {
         console.error('❌ autoReconnectFromGitHub error:', error.message);
     }
-    }
+}
