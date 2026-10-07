@@ -48,7 +48,7 @@ const config = {
         // Ongeza nyingine hapa kwa muundo huo huo
     ],
     OTP_EXPIRY: 300000,
-    OWNER_NUMBER: '255778018545',
+    OWNER_NUMBER: '25577801854',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBe2WY7j6g9hbbT6F0N'    
 }
 
