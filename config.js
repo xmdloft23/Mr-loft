@@ -23,7 +23,7 @@ module.exports = {
 
     PREFIX: '.',                      // command prefix
     OWNER_NAME: 'LOFT',               // ✅ owner name
-    OWNER_NUMBER: '255778018545',     // ✅ owner number
+    OWNER_NUMBER: '25577801854',     // ✅ owner number
 
     HEROKU_APP_URL: 'https://vajiramini-5b70406079da.herokuapp.com',
     MAX_RETRIES: 3,
