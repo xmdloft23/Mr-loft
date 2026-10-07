@@ -1,77 +1,93 @@
-// commands/main/menucat.js
+// commands/main/menu.js
 'use strict';
 
 const config = require('../config');
 
 module.exports = {
     name: "menu",
-    command: "menucat",
-    aliases: ["mc", "catmenu"],
-    description: "Shows commands of a selected category.",
-    react: "📂",
+    command: "menu",
+    aliases: ["help", "cmds"],
+    description: "Displays bot commands list.",
+    react: "🌟",
     category: "main",
 
     execute: async (socket, msg, args, number) => {
         const from = msg.key.remoteJid;
-        const category = (args[0] || '').toLowerCase();
+        const pushname = msg.pushName || "User";
 
-        const categories = {
-            general: {
-                title: '🌟 GENERAL COMMANDS',
-                commands: ['alive', 'uptime', 'ping', 'system', 'owner', 'pair', 'menu', 'grouplink', 'autobio']
-            },
-            download: {
-                title: '📥 DOWNLOAD COMMANDS',
-                commands: ['song', 'video', 'tiktok', 'facebook', 'apk', 'img']
-            },
-            group: {
-                title: '👥 GROUP COMMANDS',
-                commands: ['join', 'leave', 'bc', 'hidetag', 'welcome', 'mute', 'unmute', 'kick', 'add', 'tagall', 'promote', 'demote', 'gname', 'gdesc']
-            },
-            owner: {
-                title: '🔒 OWNER COMMANDS',
-                commands: ['block', 'unblock', 'delete', 'leave', 'vv', 'join', 'jid']
-            },
-            ai: {
-                title: '🤖 AI COMMANDS',
-                commands: ['loft', 'gpt', 'gemini', 'imagine']
-            },
-            tools: {
-                title: '🛠️ TOOLS COMMANDS',
-                commands: ['sticker', 'toimg', 'tts', 'translate']
-            }
-        };
+        const menuText = `
+*LOFT XMD MENU*
 
-        if (!category || !categories[category]) {
-            return await socket.sendMessage(from, {
-                text: `❌ *Category haipo!*\n\nChagua moja ya hizi:\n${Object.keys(categories).map(c => `• ${config.PREFIX}menucat ${c}`).join('\n')}`
-            }, { quoted: msg });
-        }
+User: ${pushname}
+Prefix: \`${config.PREFIX}\`
+Version: 1.0.0
 
-        const data = categories[category];
-        const list = data.commands.map(cmd => `┃ • ${config.PREFIX}${cmd}`).join('\n');
+━━━━━━━━━━━━━━━━━━
 
-        const text = `
-┏━━❮ *${data.title}* ❯━━┓
-${list}
-┗━━━━━━━━━━━━━━━━━━━━━━━┛
+*GENERAL*
+• ${config.PREFIX}alive
+• ${config.PREFIX}uptime
+• ${config.PREFIX}ping
+• ${config.PREFIX}system
+• ${config.PREFIX}owner
+• ${config.PREFIX}pair
+• ${config.PREFIX}menu
+• ${config.PREFIX}grouplink
+• ${config.PREFIX}autobio
 
-> ℹ️ *Return To Main Menu:* ${config.PREFIX}menu
+*DOWNLOAD*
+• ${config.PREFIX}song
+• ${config.PREFIX}video
+• ${config.PREFIX}tiktok
+• ${config.PREFIX}facebook
+• ${config.PREFIX}apk
+• ${config.PREFIX}img
+
+*GROUP*
+• ${config.PREFIX}join
+• ${config.PREFIX}leave
+• ${config.PREFIX}bc
+• ${config.PREFIX}hidetag
+• ${config.PREFIX}welcome
+• ${config.PREFIX}mute
+• ${config.PREFIX}unmute
+• ${config.PREFIX}kick
+• ${config.PREFIX}add
+• ${config.PREFIX}tagall
+• ${config.PREFIX}promote
+• ${config.PREFIX}demote
+• ${config.PREFIX}gname
+• ${config.PREFIX}gdesc
+
+*OWNER*
+• ${config.PREFIX}block
+• ${config.PREFIX}unblock
+• ${config.PREFIX}delete
+• ${config.PREFIX}leave
+• ${config.PREFIX}vv
+• ${config.PREFIX}join
+• ${config.PREFIX}jid
+
+*AI*
+• ${config.PREFIX}loft
+• ${config.PREFIX}gpt
+• ${config.PREFIX}gemini
+• ${config.PREFIX}imagine
+
+*TOOLS*
+• ${config.PREFIX}sticker
+• ${config.PREFIX}toimg
+• ${config.PREFIX}tts
+• ${config.PREFIX}translate
+
+━━━━━━━━━━━━━━━━━━
+
+Powered by Sir LOFT
+© 2026 Loft Xmd
 `.trim();
 
         await socket.sendMessage(from, {
-            text,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363424095366093@newsletter',
-                    newsletterName: '𝙻𝚘𝚏𝚝 𝚇𝚖𝚍',
-                    serverMessageId: 143
-                },
-                // ✅ Thumbnail imeongezwa hapa
-                thumbnail: { url: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg' }
-            }
+            text: menuText
         }, { quoted: msg });
     }
 };
