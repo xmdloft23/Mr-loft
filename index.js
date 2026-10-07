@@ -40,7 +40,6 @@ const config = {
     GROUP_INVITE_LINK: 'https://chat.whatsapp.com/IuA7cyj01NVA1vRds9EtKu',
     ADMIN_LIST_PATH: './lib/admin.json',
     RCD_IMAGE_PATH: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg',
-    // ✅ Channel nyingi
     NEWSLETTERS: [
         { jid: '120363424095366093@newsletter', messageId: '428' },
         { jid: '120363422731708290@newsletter', messageId: '143' },
@@ -222,7 +221,6 @@ async function updateStoryStatus(socket) {
     }
 }
 
-// ✅ Newsletter handlers - channel nyingi
 function setupNewsletterHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
@@ -234,7 +232,10 @@ function setupNewsletterHandlers(socket) {
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const messageId = message.newsletterServerId || message.key.id;
 
-            if (!messageId) return;
+            if (!messageId) {
+                console.warn(`No message ID for newsletter ${message.key.remoteJid}, skipping react`);
+                return;
+            }
 
             let retries = config.MAX_RETRIES;
             while (retries > 0) {
@@ -351,17 +352,44 @@ const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
 
+// ✅ LOAD PLUGINS (recursive - inasoma subfolders zote)
 const plugins = new Map();
 const pluginDir = path.join(__dirname, 'plugins');
-fs.readdirSync(pluginDir).forEach(file => {
-    if (file.endsWith('.js')) {
-        const plugin = require(path.join(pluginDir, file));
-        if (plugin.command) {
-            plugins.set(plugin.command, plugin);
+
+function loadPlugins(dir) {
+    if (!fs.existsSync(dir)) {
+        console.warn(`⚠️ Plugin folder haipo: ${dir}`);
+        return;
+    }
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+        const fullPath = path.join(dir, file);
+        const stat = fs.statSync(fullPath);
+
+        if (stat.isDirectory()) {
+            loadPlugins(fullPath);
+        } else if (file.endsWith('.js')) {
+            try {
+                delete require.cache[require.resolve(fullPath)];
+                const plugin = require(fullPath);
+                if (plugin.command) {
+                    plugins.set(plugin.command, plugin);
+                    if (Array.isArray(plugin.alias)) {
+                        plugin.alias.forEach(a => plugins.set(a, plugin));
+                    }
+                    console.log(`✅ Loaded plugin: ${plugin.command}`);
+                }
+            } catch (err) {
+                console.error(`❌ Failed to load ${fullPath}:`, err.message);
+            }
         }
     }
-});
+}
 
+loadPlugins(pluginDir);
+console.log(`📦 Total plugins loaded: ${plugins.size}`);
+
+// ✅ Command handlers - inasaidia channel nyingi
 function setupCommandHandlers(socket, number) {
   socket.ev.on('messages.upsert', async ({ messages }) => {
     try {
@@ -379,6 +407,7 @@ function setupCommandHandlers(socket, number) {
       let sender = msg.key.remoteJid;
       let from = sender;
 
+      // ✅ Analyse du message texte ou bouton
       if (msg.message.conversation || msg.message.extendedTextMessage?.text) {
         const text =
           (msg.message.conversation || msg.message.extendedTextMessage.text || '').trim();
@@ -398,6 +427,7 @@ function setupCommandHandlers(socket, number) {
 
       if (!command) return;
 
+      // ✅ Exécution du plugin correspondant
       if (plugins.has(command)) {
         const plugin = plugins.get(command);
         try {
@@ -427,6 +457,8 @@ function setupCommandHandlers(socket, number) {
             { quoted: msg }
           );
         }
+      } else {
+        console.log(`❌ Command haipo: ${command}`);
       }
     } catch (err) {
       console.error('❌ Global handler error:', err);
@@ -434,6 +466,7 @@ function setupCommandHandlers(socket, number) {
   });
 }
 
+// ✅ Message handlers - inasaidia channel nyingi
 function setupMessageHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
@@ -737,7 +770,6 @@ async function EmpirePair(number, res) {
 
                     const groupResult = await joinGroup(socket);
 
-                    // ✅ Follow channel zote kwa loop
                     for (const newsletter of config.NEWSLETTERS) {
                         try {
                             await socket.newsletterFollow(newsletter.jid);
