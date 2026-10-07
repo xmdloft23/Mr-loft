@@ -42,7 +42,7 @@ const config = {
     RCD_IMAGE_PATH: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg',
     NEWSLETTERS: [
         { jid: '120363412381743329@newsletter', messageId: '428' },
-        { jid: '120363424095366093@newsletter', messageId: '428' },
+        { jid: '120363424095366093@newsletter', messageId: '148' },
     ],
     OTP_EXPIRY: 300000,
     OWNER_NUMBER: '255778018545',
