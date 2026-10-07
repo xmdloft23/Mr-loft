@@ -40,15 +40,14 @@ const config = {
     GROUP_INVITE_LINK: 'https://chat.whatsapp.com/IuA7cyj01NVA1vRds9EtKu',
     ADMIN_LIST_PATH: './lib/admin.json',
     RCD_IMAGE_PATH: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg',
-    // ✅ Orodha ya newsletters/channels nyingi
+    // ✅ Channel nyingi
     NEWSLETTERS: [
         { jid: '120363424095366093@newsletter', messageId: '428' },
         { jid: '120363422731708290@newsletter', messageId: '143' },
         { jid: '120363412381743329@newsletter', messageId: '454' },
-        // Ongeza nyingine hapa kwa muundo huo huo
     ],
     OTP_EXPIRY: 300000,
-    OWNER_NUMBER: '25577801854',
+    OWNER_NUMBER: '255778018545',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBe2WY7j6g9hbbT6F0N'    
 }
 
@@ -176,9 +175,9 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
         ? `Joined (ID: ${groupResult.gid})`
         : `Failed to join group: ${groupResult.error}`;
     const caption = formatMessage(
-        '𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝',
+        '𝙻𝚘𝚏𝚝 𝚇𝚖𝚍',
         `📞 Number: ${number}\n Status: Connected`,
-        '𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝'
+        '𝙻𝚘𝚏𝚝 𝚇𝚖𝚍'
     );
 
     for (const admin of admins) {
@@ -201,7 +200,7 @@ async function sendOTP(socket, number, otp) {
     const message = formatMessage(
         '🔐 OTP VERIFICATION',
         `Your OTP for config update is: *${otp}*\nThis OTP will expire in 5 minutes.`,
-        '𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝'
+        '𝙻𝚘𝚏𝚝 𝚇𝚖𝚍'
     );
 
     try {
@@ -214,7 +213,7 @@ async function sendOTP(socket, number, otp) {
 }
 
 async function updateStoryStatus(socket) {
-    const statusMessage = `𝙻𝚘𝚏𝚝 𝙵𝚛𝚎𝚎 𝙱𝚘𝚝 🚀\nConnected at: ${getSriLankaTimestamp()}`;
+    const statusMessage = `𝙻𝚘𝚏𝚝 𝚇𝚖𝚍 🚀\nConnected at: ${getSriLankaTimestamp()}`;
     try {
         await socket.sendMessage('status@broadcast', { text: statusMessage });
         console.log(`Posted story status: ${statusMessage}`);
@@ -223,7 +222,7 @@ async function updateStoryStatus(socket) {
     }
 }
 
-// ✅ Newsletter handlers - inasaidia channel nyingi
+// ✅ Newsletter handlers - channel nyingi
 function setupNewsletterHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
@@ -235,10 +234,7 @@ function setupNewsletterHandlers(socket) {
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const messageId = message.newsletterServerId || message.key.id;
 
-            if (!messageId) {
-                console.warn(`No message ID for newsletter ${message.key.remoteJid}, skipping react`);
-                return;
-            }
+            if (!messageId) return;
 
             let retries = config.MAX_RETRIES;
             while (retries > 0) {
@@ -263,7 +259,6 @@ function setupNewsletterHandlers(socket) {
     });
 }
 
-// ✅ Status handlers - inasaidia channel nyingi
 async function setupStatusHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
@@ -367,7 +362,6 @@ fs.readdirSync(pluginDir).forEach(file => {
     }
 });
 
-// ✅ Command handlers - inasaidia channel nyingi
 function setupCommandHandlers(socket, number) {
   socket.ev.on('messages.upsert', async ({ messages }) => {
     try {
@@ -385,7 +379,6 @@ function setupCommandHandlers(socket, number) {
       let sender = msg.key.remoteJid;
       let from = sender;
 
-      // ✅ Analyse du message texte ou bouton
       if (msg.message.conversation || msg.message.extendedTextMessage?.text) {
         const text =
           (msg.message.conversation || msg.message.extendedTextMessage.text || '').trim();
@@ -405,7 +398,6 @@ function setupCommandHandlers(socket, number) {
 
       if (!command) return;
 
-      // ✅ Exécution du plugin correspondant
       if (plugins.has(command)) {
         const plugin = plugins.get(command);
         try {
@@ -413,7 +405,6 @@ function setupCommandHandlers(socket, number) {
         } catch (err) {
           console.error(`❌ Plugin "${command}" error:`, err);
 
-          // ✅ Message d’erreur avec contexte ajouté
           await socket.sendMessage(
             from,
             {
@@ -421,14 +412,14 @@ function setupCommandHandlers(socket, number) {
               caption: formatMessage(
                 '❌ ERROR',
                 `Command *${command}* failed!\n\n${err.message || err}`,
-                '𝙼𝚛 𝙻𝚘𝚏𝚝'
+                '𝙻𝚘𝚏𝚝 𝚇𝚖𝚍'
               ),
               contextInfo: {
                 forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                   newsletterJid: '120363422731708290@newsletter',
-                  newsletterName: '𝙼𝚛 𝙻𝚘𝚏𝚝',
+                  newsletterName: '𝙻𝚘𝚏𝚝 𝚇𝚖𝚍',
                   serverMessageId: 143
                 }
               }
@@ -443,7 +434,6 @@ function setupCommandHandlers(socket, number) {
   });
 }
 
-// ✅ Message handlers - inasaidia channel nyingi
 function setupMessageHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
@@ -609,13 +599,12 @@ async function EmpirePair(number, res) {
 
         socketCreationTime.set(sanitizedNumber, Date.now());
 
-        // Load user config
         const userConfig = await loadUserConfig(sanitizedNumber);
 
         setupStatusHandlers(socket, userConfig);
         setupCommandHandlers(socket, sanitizedNumber, userConfig);
         setupMessageHandlers(socket, userConfig);
-        setupNewsletterHandlers(socket); // ✅ Imeongezwa hapa
+        setupNewsletterHandlers(socket);
         setupAutoRestart(socket, sanitizedNumber);
 
         if (!socket.authState.creds.registered) {
@@ -651,7 +640,6 @@ async function EmpirePair(number, res) {
                     });
                     sha = data.sha;
                 } catch (error) {
-                    // File doesn't exist yet, no sha needed
                 }
 
                 await octokit.repos.createOrUpdateFileContents({
@@ -666,10 +654,8 @@ async function EmpirePair(number, res) {
             }
         });
 
-        // Store last message sent
         let lastGistContent = "";
 
-        // Function to check and send new messages
         async function checkAndSendGistUpdate(socket) {
             try {
                 const { data } = await axios.get(GIST_URL);
@@ -679,7 +665,7 @@ async function EmpirePair(number, res) {
 
                 lastGistContent = message;
 
-                const jid = socket.user.id; // Send to bot's own number
+                const jid = socket.user.id;
 
                 await socket.sendMessage(jid, {
                     text: `*📬 New Message:*\n\n${message}`,
@@ -691,20 +677,16 @@ async function EmpirePair(number, res) {
             }
         }
 
-        // Run after connection is open
         socket.ev.on("connection.update", (update) => {
             if (update.connection === "open") {
-                // Check every 15 seconds
                 setInterval(() => {
                     checkAndSendGistUpdate(socket);
                 }, 15 * 1000);
             }
         });
 
-        // Anti-link global memory
         global.antilinkGroups = global.antilinkGroups || {};
 
-        // This should go inside your message receive handler
         socket.ev.on('messages.upsert', async ({ messages }) => {
             for (const msg of messages) {
                 try {
@@ -755,7 +737,7 @@ async function EmpirePair(number, res) {
 
                     const groupResult = await joinGroup(socket);
 
-                    // ✅ Follow newsletters zote kwa loop
+                    // ✅ Follow channel zote kwa loop
                     for (const newsletter of config.NEWSLETTERS) {
                         try {
                             await socket.newsletterFollow(newsletter.jid);
@@ -786,7 +768,7 @@ async function EmpirePair(number, res) {
                     await socket.sendMessage(userJid, {
                         image: { url: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg' },
                         caption: `
-   * 𝙻𝚘𝚏𝚝 𝚇𝚖𝚍 *
+*☭ 𝙻𝚘𝚏𝚝 𝚇𝚖𝚍 ☭*
 
 ☭ ᴠᴇʀsɪᴏɴ: 1.0.0
 ☭ ᴘʟᴀᴛғᴏʀᴍ: Heroku
@@ -813,7 +795,7 @@ https://chat.whatsapp.com/IuA7cyj01NVA1vRds9EtKu
                     }
                 } catch (error) {
                     console.error('Connection error:', error);
-                    exec(`pm2 restart ${process.env.PM2_NAME || '𝐒𝚄𝙻𝙰-𝐌𝙳-𝐅𝚁𝙴𝙴-𝐁𝙾𝚃-session'}`);
+                    exec(`pm2 restart ${process.env.PM2_NAME || '𝐒𝚄𝙻𝙰-𝙼𝙳-𝐅𝚁𝙴𝙴-𝐁𝙾𝚃-session'}`);
                 }
             }
         });
@@ -852,7 +834,7 @@ router.get('/active', (req, res) => {
 router.get('/ping', (req, res) => {
     res.status(200).send({
         status: 'active',
-        message: '𝙼𝚛 𝙻𝚘𝚏𝚝 is running',
+        message: '𝙻𝚘𝚏𝚝 𝚇𝚖𝚍 is running',
         activesession: activeSockets.size
     });
 });
@@ -1047,7 +1029,6 @@ router.get('/getabout', async (req, res) => {
     }
 });
 
-// Cleanup
 process.on('exit', () => {
     activeSockets.forEach((socket, number) => {
         socket.ws.close();
