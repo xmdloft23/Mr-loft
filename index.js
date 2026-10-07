@@ -41,9 +41,8 @@ const config = {
     ADMIN_LIST_PATH: './lib/admin.json',
     RCD_IMAGE_PATH: 'https://raw.githubusercontent.com/xmdloft23/Bot-master/main/loft/tech.jpg',
     NEWSLETTERS: [
+        { jid: '120363412381743329@newsletter', messageId: '428' },
         { jid: '120363424095366093@newsletter', messageId: '428' },
-        { jid: '120363422731708290@newsletter', messageId: '143' },
-        { jid: '120363412381743329@newsletter', messageId: '454' },
     ],
     OTP_EXPIRY: 300000,
     OWNER_NUMBER: '255778018545',
